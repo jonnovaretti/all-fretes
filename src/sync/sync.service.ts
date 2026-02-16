@@ -3,8 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { Queue, Worker } from 'bullmq';
 import { AccountsService } from '../accounts/accounts.service';
 import { SYNC_TRACKS_QUEUE_NAME } from '../common/constants';
-import { PlaywrightService } from '../playwright/playwright.service';
-import { TracksService } from '../tracks/tracks.service';
+import { GoFreteNavigatorService } from '../playwright/gofrete-navigator.service';
+import { ParsedTrackRow, TracksService } from '../tracks/tracks.service';
+import { parseBRDate, parseBRL } from './helpers/parse.helper';
 
 export const SYNC_QUEUE = 'SYNC_QUEUE';
 
@@ -23,7 +24,7 @@ export class SyncService implements OnModuleDestroy {
     private readonly configService: ConfigService,
     private readonly accountsService: AccountsService,
     private readonly tracksService: TracksService,
-    private readonly playwrightService: PlaywrightService
+    private readonly goFreteNavigatorService: GoFreteNavigatorService
   ) {
     this.queueName = this.configService.get<string>(
       'queue.syncQueueName',
@@ -84,19 +85,73 @@ export class SyncService implements OnModuleDestroy {
   async handleSync(payload: SyncTracksJobPayload) {
     this.logger.log(`Starting sync for account ${payload.accountId}`);
 
+    let pageNumber = 1;
+    const pageSize = 10;
+    const parsedTrackRow: ParsedTrackRow[] = [];
     const account = await this.accountsService.findOneOrFail(payload.accountId);
-    const rows = await this.playwrightService.loginAndReadTracks(
-      account.loginUrl,
-      account.username,
-      account.password
+
+    const browser = await this.goFreteNavigatorService.createBrowser();
+
+    const loggedPage = await this.goFreteNavigatorService.signInPage(browser, {
+      loginUrl: account.loginUrl,
+      username: account.username,
+      password: account.password
+    });
+
+    let containsNoResultMessage =
+      await this.goFreteNavigatorService.containsNoResultMessage(loggedPage);
+
+    this.logger.log(`${containsNoResultMessage} contains`);
+
+    while (!containsNoResultMessage) {
+      this.logger.log(`iterating over table rows`);
+
+      const tableRows =
+        await this.goFreteNavigatorService.readTrackTableByStatus(
+          loggedPage,
+          'collected',
+          {
+            pageNumber,
+            pageSize,
+            orderBy: 'DESC',
+            initialDate: ''
+          }
+        );
+
+      const trackRows =
+        await this.goFreteNavigatorService.extractTrackDataFromRows(tableRows);
+
+      this.logger.log(`track rows extracted ${trackRows} - page ${pageNumber}`);
+
+      trackRows.forEach((t) => {
+        parsedTrackRow.push({
+          externalId: t.pedido,
+          status: t.status,
+          origin: t.origem,
+          destination: t.destino,
+          value: parseBRL(t.valor),
+          openedAt: parseBRDate(t.criado),
+          scheduled: t.prazo,
+          invoiceCode: t.nfe
+        });
+      });
+
+      containsNoResultMessage =
+        await this.goFreteNavigatorService.containsNoResultMessage(loggedPage);
+
+      pageNumber = pageNumber + 1;
+    }
+
+    const summary = await this.tracksService.upsertTracks(
+      account.id,
+      parsedTrackRow
     );
 
-    const summary = await this.tracksService.upsertTracks(account.id, rows);
     this.logger.log(`Sync finished for account ${account.id}`);
 
     return {
       accountId: account.id,
-      totalRows: rows.length,
+      totalRows: parsedTrackRow.length,
       ...summary
     };
   }

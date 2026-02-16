@@ -1,26 +1,4 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    environment:
-      PORT: 3000
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASS: postgres
-      DB_NAME: all_fretes
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      PLAYWRIGHT_HEADLESS: 'true'
-    ports:
-      - '3000:3000'
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped

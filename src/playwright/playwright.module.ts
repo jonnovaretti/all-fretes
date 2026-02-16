@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { PlaywrightService } from './playwright.service';
+import { GoFreteNavigatorService } from './gofrete-navigator.service';
 
 @Module({
-  providers: [PlaywrightService],
-  exports: [PlaywrightService]
+  providers: [GoFreteNavigatorService],
+  exports: [GoFreteNavigatorService]
 })
 export class PlaywrightModule {}

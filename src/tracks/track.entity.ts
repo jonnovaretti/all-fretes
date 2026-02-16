@@ -29,10 +29,25 @@ export class Track {
   externalId!: string;
 
   @Column({ type: 'varchar', nullable: false })
-  title!: string;
+  status!: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  invoiceCode!: string;
 
   @Column({ type: 'varchar', nullable: false })
-  status!: string;
+  origin!: string;
+
+  @Column({ type: 'varchar', nullable: false })
+  destination!: string;
+
+  @Column({ type: 'varchar', nullable: false })
+  value!: number;
+
+  @Column({ type: 'varchar', nullable: false })
+  openedAt!: Date;
+
+  @Column({ type: 'varchar', nullable: false })
+  scheduled!: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

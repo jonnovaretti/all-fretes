@@ -5,8 +5,13 @@ import { Track } from './track.entity';
 
 export interface ParsedTrackRow {
   externalId: string;
-  title: string;
   status: string;
+  invoiceCode: string;
+  origin: string;
+  destination: string;
+  value: number;
+  openedAt: Date;
+  scheduled: string;
 }
 
 @Injectable()
@@ -38,21 +43,27 @@ export class TracksService {
       const found = map.get(row.externalId);
       if (found) {
         updated += 1;
-        found.title = row.title;
         found.status = row.status;
         return found;
       }
 
       inserted += 1;
+
       return this.trackRepository.create({
         accountId,
         externalId: row.externalId,
-        title: row.title,
-        status: row.status
+        status: row.status,
+        openedAt: row.openedAt,
+        scheduled: row.scheduled,
+        invoiceCode: row.invoiceCode,
+        destination: row.destination,
+        origin: row.origin,
+        value: row.value
       });
     });
 
     await this.trackRepository.save(entities);
+
     return { inserted, updated };
   }
 }
