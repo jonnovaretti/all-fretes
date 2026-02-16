@@ -58,7 +58,12 @@ export class GoFreteNavigatorService {
       .first()
       .fill(password);
 
-    await page.getByRole('button', { name: 'Entrar' }).click();
+    await Promise.all([
+      page.waitForURL((url) => !url.pathname.toLowerCase().includes('login'), {
+        timeout: 60000
+      }),
+      page.getByRole('button', { name: 'Entrar' }).click()
+    ]);
 
     await page.waitForLoadState('networkidle');
 
@@ -86,13 +91,39 @@ export class GoFreteNavigatorService {
     tracksUrl.searchParams.append('OrderBy', pagination.orderBy);
     tracksUrl.searchParams.append('Situation', status);
 
-    await page.goto(tracksUrl.toString(), {
-      timeout: 60000
-    });
+    await this.navigateWithRetry(page, tracksUrl.toString());
 
     await page.waitForSelector('table tbody tr');
 
     return page.locator('table tbody tr');
+  }
+
+  private async navigateWithRetry(page: Page, url: string): Promise<void> {
+    try {
+      await page.goto(url, {
+        timeout: 60000,
+        waitUntil: 'domcontentloaded'
+      });
+      return;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const isAbortedNavigation = message.includes('ERR_ABORTED');
+
+      if (!isAbortedNavigation) {
+        throw error;
+      }
+
+      this.logger.warn(
+        `Navigation aborted while loading ${url}. Waiting for the page to settle before retrying once.`
+      );
+
+      await page.waitForTimeout(1000);
+
+      await page.goto(url, {
+        timeout: 60000,
+        waitUntil: 'domcontentloaded'
+      });
+    }
   }
 
   async extractTrackDataFromRows(tableRows: Locator): Promise<TrackRow[]> {
