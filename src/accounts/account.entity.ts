@@ -6,7 +6,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn
 } from 'typeorm';
-import { Track } from '../tracks/track.entity';
+import { Shipment } from '../shipments/shipment.entity';
 
 @Entity('accounts')
 export class Account {
@@ -26,8 +26,8 @@ export class Account {
   @Column({ type: 'varchar', nullable: false })
   password!: string;
 
-  @OneToMany(() => Track, (track) => track.account)
-  tracks!: Track[];
+  @OneToMany(() => Shipment, (shipment) => shipment.account)
+  shipments!: Shipment[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

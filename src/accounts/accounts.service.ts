@@ -33,8 +33,8 @@ export class AccountsService {
   }
 
   private withoutPassword(account: Account): Omit<Account, 'password'> {
-    const { id, name, loginUrl, username, createdAt, updatedAt, tracks } =
+    const { id, name, loginUrl, username, createdAt, updatedAt, shipments } =
       account;
-    return { id, name, loginUrl, username, createdAt, updatedAt, tracks };
+    return { id, name, loginUrl, username, createdAt, updatedAt, shipments };
   }
 }

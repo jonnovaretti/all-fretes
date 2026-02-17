@@ -7,7 +7,7 @@ import { appConfig } from './config/app.config';
 import { queueConfig } from './config/queue.config';
 import { typeOrmConfig } from './config/database.config';
 import { SyncModule } from './sync/sync.module';
-import { TracksModule } from './tracks/tracks.module';
+import { ShipmentsModule } from './shipments/shipments.module';
 import { MockModule } from './mock/mock.module';
 import { HealthModule } from './health/health.module';
 
@@ -19,7 +19,7 @@ import { HealthModule } from './health/health.module';
     }),
     TypeOrmModule.forRootAsync(typeOrmConfig),
     AccountsModule,
-    TracksModule,
+    ShipmentsModule,
     SyncModule,
     MockModule,
     HealthModule

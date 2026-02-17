@@ -10,16 +10,16 @@ import {
 } from 'typeorm';
 import { Account } from '../accounts/account.entity';
 
-@Entity('tracks')
-@Unique('UQ_tracks_account_external', ['accountId', 'externalId'])
-export class Track {
+@Entity('shipments')
+@Unique('UQ_shipments_account_external', ['accountId', 'externalId'])
+export class Shipment {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ name: 'account_id', type: 'uuid', nullable: false })
   accountId!: string;
 
-  @ManyToOne(() => Account, (account) => account.tracks, {
+  @ManyToOne(() => Account, (account) => account.shipments, {
     onDelete: 'CASCADE'
   })
   @JoinColumn({ name: 'account_id' })
