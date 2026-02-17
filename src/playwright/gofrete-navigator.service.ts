@@ -59,7 +59,7 @@ export class GoFreteNavigatorService {
       .fill(password);
 
     await Promise.all([
-      page.waitForURL((url) => !url.pathname.toLowerCase().includes('login'), {
+      page.waitForURL((url) => !url.pathname.toLowerCase().includes('entrar'), {
         timeout: 60000
       }),
       page.getByRole('button', { name: 'Entrar' }).click()
@@ -71,6 +71,8 @@ export class GoFreteNavigatorService {
   }
 
   async containsNoResultMessage(page: Page): Promise<boolean> {
+    await page.waitForLoadState('networkidle');
+
     const locator = page.getByText('Nenhum resultado');
 
     const counter = await locator.count();
@@ -91,11 +93,21 @@ export class GoFreteNavigatorService {
     tracksUrl.searchParams.append('OrderBy', pagination.orderBy);
     tracksUrl.searchParams.append('Situation', status);
 
+    this.logger.log(`navigating to ${tracksUrl.toString()}`);
+
     await this.navigateWithRetry(page, tracksUrl.toString());
 
     await page.waitForSelector('table tbody tr');
 
     return page.locator('table tbody tr');
+  }
+
+  async goToNextPage(page: Page) {
+    await Promise.all([
+      await page.locator('button:has(i.mdi-chevron-right)').click()
+    ]);
+
+    await page.waitForLoadState('networkidle');
   }
 
   private async navigateWithRetry(page: Page, url: string): Promise<void> {
@@ -104,6 +116,7 @@ export class GoFreteNavigatorService {
         timeout: 60000,
         waitUntil: 'domcontentloaded'
       });
+
       return;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
