@@ -85,7 +85,7 @@ export class SyncService implements OnModuleDestroy {
   async handleSync(payload: SyncTracksJobPayload) {
     this.logger.log(`Starting sync for account ${payload.accountId}`);
 
-    let pageNumber = 1;
+    const pageNumber = 1;
     const pageSize = 10;
     const parsedTrackRow: ParsedTrackRow[] = [];
     const account = await this.accountsService.findOneOrFail(payload.accountId);
@@ -101,11 +101,7 @@ export class SyncService implements OnModuleDestroy {
     let containsNoResultMessage =
       await this.goFreteNavigatorService.containsNoResultMessage(loggedPage);
 
-    this.logger.log(`${containsNoResultMessage} contains`);
-
     while (!containsNoResultMessage) {
-      this.logger.log(`iterating over table rows`);
-
       const tableRows =
         await this.goFreteNavigatorService.readTrackTableByStatus(
           loggedPage,
@@ -121,8 +117,6 @@ export class SyncService implements OnModuleDestroy {
       const trackRows =
         await this.goFreteNavigatorService.extractTrackDataFromRows(tableRows);
 
-      this.logger.log(`track rows extracted ${trackRows} - page ${pageNumber}`);
-
       trackRows.forEach((t) => {
         parsedTrackRow.push({
           externalId: t.pedido,
@@ -136,10 +130,15 @@ export class SyncService implements OnModuleDestroy {
         });
       });
 
+      await this.goFreteNavigatorService.goToNextPage(loggedPage);
+
       containsNoResultMessage =
         await this.goFreteNavigatorService.containsNoResultMessage(loggedPage);
 
-      pageNumber = pageNumber + 1;
+      await loggedPage.screenshot({
+        path: `debug-${Date.now()}.png`,
+        fullPage: true
+      });
     }
 
     const summary = await this.tracksService.upsertTracks(

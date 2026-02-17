@@ -31,7 +31,7 @@ export class Track {
   @Column({ type: 'varchar', nullable: false })
   status!: string;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ name: 'invoice_code', type: 'varchar', nullable: true })
   invoiceCode!: string;
 
   @Column({ type: 'varchar', nullable: false })
@@ -43,11 +43,11 @@ export class Track {
   @Column({ type: 'varchar', nullable: false })
   value!: number;
 
-  @Column({ type: 'varchar', nullable: false })
-  openedAt!: Date;
+  @Column({ name: 'started_at', type: 'timestamp', nullable: true })
+  startedAt!: Date;
 
-  @Column({ type: 'varchar', nullable: false })
-  scheduled!: string;
+  @Column({ name: 'delivery_estimate', type: 'varchar', nullable: false })
+  deliveryEstimate!: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

@@ -16,7 +16,7 @@ export function createDataSourceOptions(
       url: databaseUrl,
       entities: [Account, Track],
       migrations: [__dirname + '/../migrations/*{.ts,.js}'],
-      synchronize: false,
+      synchronize: true,
       ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
     };
   }
