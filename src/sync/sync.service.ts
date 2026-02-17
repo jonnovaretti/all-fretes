@@ -2,14 +2,17 @@ import { Inject, Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue, Worker } from 'bullmq';
 import { AccountsService } from '../accounts/accounts.service';
-import { SYNC_TRACKS_QUEUE_NAME } from '../common/constants';
+import { SYNC_SHIPMENTS_QUEUE_NAME } from '../common/constants';
 import { GoFreteNavigatorService } from '../playwright/gofrete-navigator.service';
-import { ParsedTrackRow, TracksService } from '../tracks/tracks.service';
+import {
+  ParsedShipmentRow,
+  ShipmentsService
+} from '../shipments/shipments.service';
 import { parseBRDate, parseBRL } from './helpers/parse.helper';
 
 export const SYNC_QUEUE = 'SYNC_QUEUE';
 
-interface SyncTracksJobPayload {
+interface SyncShipmentsJobPayload {
   accountId: string;
 }
 
@@ -17,18 +20,18 @@ interface SyncTracksJobPayload {
 export class SyncService implements OnModuleDestroy {
   private readonly logger = new Logger(SyncService.name);
   private readonly queueName: string;
-  private readonly worker: Worker<SyncTracksJobPayload>;
+  private readonly worker: Worker<SyncShipmentsJobPayload>;
 
   constructor(
-    @Inject(SYNC_QUEUE) private readonly queue: Queue<SyncTracksJobPayload>,
+    @Inject(SYNC_QUEUE) private readonly queue: Queue<SyncShipmentsJobPayload>,
     private readonly configService: ConfigService,
     private readonly accountsService: AccountsService,
-    private readonly tracksService: TracksService,
+    private readonly shipmentsService: ShipmentsService,
     private readonly goFreteNavigatorService: GoFreteNavigatorService
   ) {
     this.queueName = this.configService.get<string>(
       'queue.syncQueueName',
-      SYNC_TRACKS_QUEUE_NAME
+      SYNC_SHIPMENTS_QUEUE_NAME
     );
 
     const redisConfig = this.configService.get<{
@@ -66,7 +69,7 @@ export class SyncService implements OnModuleDestroy {
 
   async enqueue(accountId: string) {
     const job = await this.queue.add(
-      'sync-tracks-job',
+      'sync-shipments-job',
       { accountId },
       {
         attempts: 3,
@@ -82,12 +85,12 @@ export class SyncService implements OnModuleDestroy {
     return { jobId: job.id };
   }
 
-  async handleSync(payload: SyncTracksJobPayload) {
+  async handleSync(payload: SyncShipmentsJobPayload) {
     this.logger.log(`Starting sync for account ${payload.accountId}`);
 
     const pageNumber = 1;
     const pageSize = 10;
-    const parsedTrackRow: ParsedTrackRow[] = [];
+    const parsedShipmentRow: ParsedShipmentRow[] = [];
     const account = await this.accountsService.findOneOrFail(payload.accountId);
 
     const browser = await this.goFreteNavigatorService.createBrowser();
@@ -103,7 +106,7 @@ export class SyncService implements OnModuleDestroy {
 
     while (!containsNoResultMessage) {
       const tableRows =
-        await this.goFreteNavigatorService.readTrackTableByStatus(
+        await this.goFreteNavigatorService.readShipmentTableByStatus(
           loggedPage,
           'collected',
           {
@@ -114,11 +117,13 @@ export class SyncService implements OnModuleDestroy {
           }
         );
 
-      const trackRows =
-        await this.goFreteNavigatorService.extractTrackDataFromRows(tableRows);
+      const shipmentRows =
+        await this.goFreteNavigatorService.extractShipmentDataFromRows(
+          tableRows
+        );
 
-      trackRows.forEach((t) => {
-        parsedTrackRow.push({
+      shipmentRows.forEach((t) => {
+        parsedShipmentRow.push({
           externalId: t.pedido,
           status: t.status,
           origin: t.origem,
@@ -141,16 +146,16 @@ export class SyncService implements OnModuleDestroy {
       });
     }
 
-    const summary = await this.tracksService.upsertTracks(
+    const summary = await this.shipmentsService.upsertShipments(
       account.id,
-      parsedTrackRow
+      parsedShipmentRow
     );
 
     this.logger.log(`Sync finished for account ${account.id}`);
 
     return {
       accountId: account.id,
-      totalRows: parsedTrackRow.length,
+      totalRows: parsedShipmentRow.length,
       ...summary
     };
   }

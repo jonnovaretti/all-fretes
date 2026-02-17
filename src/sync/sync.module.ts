@@ -2,14 +2,14 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
 import { AccountsModule } from '../accounts/accounts.module';
-import { SYNC_TRACKS_QUEUE_NAME } from '../common/constants';
+import { SYNC_SHIPMENTS_QUEUE_NAME } from '../common/constants';
 import { PlaywrightModule } from '../playwright/playwright.module';
-import { TracksModule } from '../tracks/tracks.module';
+import { ShipmentsModule } from '../shipments/shipments.module';
 import { SyncController } from './sync.controller';
 import { SyncService, SYNC_QUEUE } from './sync.service';
 
 @Module({
-  imports: [AccountsModule, TracksModule, PlaywrightModule],
+  imports: [AccountsModule, ShipmentsModule, PlaywrightModule],
   controllers: [SyncController],
   providers: [
     {
@@ -18,7 +18,7 @@ import { SyncService, SYNC_QUEUE } from './sync.service';
       useFactory: (configService: ConfigService) => {
         const queueName = configService.get<string>(
           'queue.syncQueueName',
-          SYNC_TRACKS_QUEUE_NAME
+          SYNC_SHIPMENTS_QUEUE_NAME
         );
         const redis = configService.get<{
           host: string;

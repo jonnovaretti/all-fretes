@@ -1,6 +1,6 @@
 # all-fretes sync service
 
-Production-ready NestJS demo service that enqueues sync jobs, uses Playwright (Chromium) to scrape a local mock portal, and persists tracks into PostgreSQL.
+Production-ready NestJS demo service that enqueues sync jobs, uses Playwright (Chromium) to scrape a local mock portal, and persists shipments into PostgreSQL.
 
 ## Stack
 - Node.js 20
@@ -28,11 +28,11 @@ src/
     accounts.module.ts
     accounts.service.ts
     dto/create-account.dto.ts
-  tracks/
-    track.entity.ts
-    tracks.controller.ts
-    tracks.module.ts
-    tracks.service.ts
+  shipments/
+    shipment.entity.ts
+    shipments.controller.ts
+    shipments.module.ts
+    shipments.service.ts
   sync/
     sync.controller.ts
     sync.module.ts
@@ -83,8 +83,8 @@ docker-compose up --build
 ```
 `loginUrl` is optional and defaults to `http://localhost:3000/mock/login`.
 
-### Get tracks for account
-`GET /accounts/:id/tracks`
+### Get shipments for account
+`GET /accounts/:id/shipments`
 
 ### Enqueue sync
 `POST /accounts/:id/sync`
@@ -93,16 +93,16 @@ docker-compose up --build
 `GET /health`
 
 ## Sync flow
-1. API receives sync request and enqueues `sync-tracks` job.
+1. API receives sync request and enqueues `sync-shipments` job.
 2. Worker loads account credentials from DB.
 3. Playwright visits login page and signs in using WebForms-style selectors (`name$=`, `id$=`), waits for `networkidle`, handles postback-like behavior.
-4. Worker navigates to `/mock/tracks` and parses the table `#ctl00_MainContent_TracksGrid`.
-5. Parsed rows are upserted into `tracks` by unique `(accountId, externalId)`.
+4. Worker navigates to `/mock/shipments` and parses the table `#ctl00_MainContent_ShipmentsGrid`.
+5. Parsed rows are upserted into `shipments` by unique `(accountId, externalId)`.
 
 ## Mock portal
 - `GET /mock/login`: HTML login form with ASP.NET-like input names.
-- `POST /mock/login`: sets cookie `mock_session=1`, redirects to `/mock/tracks`.
-- `GET /mock/tracks`: requires session cookie and renders tracks table.
+- `POST /mock/login`: sets cookie `mock_session=1`, redirects to `/mock/shipments`.
+- `GET /mock/shipments`: requires session cookie and renders shipments table.
 
 ## Railway deployment notes
 - Use this repository `Dockerfile` for deployment.

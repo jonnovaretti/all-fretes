@@ -2,7 +2,7 @@ import { TypeOrmModuleAsyncOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { DataSourceOptions } from 'typeorm';
 import { Account } from '../accounts/account.entity';
-import { Track } from '../tracks/track.entity';
+import { Shipment } from '../shipments/shipment.entity';
 
 export function createDataSourceOptions(
   configService?: ConfigService
@@ -14,7 +14,7 @@ export function createDataSourceOptions(
     return {
       type: 'postgres',
       url: databaseUrl,
-      entities: [Account, Track],
+      entities: [Account, Shipment],
       migrations: [__dirname + '/../migrations/*{.ts,.js}'],
       synchronize: true,
       ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
@@ -42,7 +42,7 @@ export function createDataSourceOptions(
       configService?.get<string>('DB_NAME') ??
       process.env.DB_NAME ??
       'all_fretes',
-    entities: [Account, Track],
+    entities: [Account, Shipment],
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
     synchronize: false
   };

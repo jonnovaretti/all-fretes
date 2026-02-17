@@ -15,7 +15,7 @@ interface Pagination {
   initialDate: string;
 }
 
-export interface TrackRow {
+export interface ShipmentRow {
   pedido: string;
   status: string;
   nfe: string;
@@ -80,22 +80,25 @@ export class GoFreteNavigatorService {
     return counter > 0;
   }
 
-  async readTrackTableByStatus(
+  async readShipmentTableByStatus(
     page: Page,
     status: string,
     pagination: Pagination
   ): Promise<Locator> {
     const baseUrl = new URL(page.url()).origin;
-    const tracksUrl = new URL('/Pedidos', baseUrl);
+    const shipmentsUrl = new URL('/Pedidos', baseUrl);
 
-    tracksUrl.searchParams.append('Page', pagination.pageNumber.toString());
-    tracksUrl.searchParams.append('PageSize', pagination.pageSize.toString());
-    tracksUrl.searchParams.append('OrderBy', pagination.orderBy);
-    tracksUrl.searchParams.append('Situation', status);
+    shipmentsUrl.searchParams.append('Page', pagination.pageNumber.toString());
+    shipmentsUrl.searchParams.append(
+      'PageSize',
+      pagination.pageSize.toString()
+    );
+    shipmentsUrl.searchParams.append('OrderBy', pagination.orderBy);
+    shipmentsUrl.searchParams.append('Situation', status);
 
-    this.logger.log(`navigating to ${tracksUrl.toString()}`);
+    this.logger.log(`navigating to ${shipmentsUrl.toString()}`);
 
-    await this.navigateWithRetry(page, tracksUrl.toString());
+    await this.navigateWithRetry(page, shipmentsUrl.toString());
 
     await page.waitForSelector('table tbody tr');
 
@@ -139,10 +142,12 @@ export class GoFreteNavigatorService {
     }
   }
 
-  async extractTrackDataFromRows(tableRows: Locator): Promise<TrackRow[]> {
+  async extractShipmentDataFromRows(
+    tableRows: Locator
+  ): Promise<ShipmentRow[]> {
     const count = await tableRows.count();
 
-    const trackRows: TrackRow[] = [];
+    const shipmentRows: ShipmentRow[] = [];
 
     for (let i = 0; i < count; i++) {
       const row = tableRows.nth(i);
@@ -156,7 +161,7 @@ export class GoFreteNavigatorService {
       const prazo = await row.locator('td').nth(6).innerText();
       const valor = await row.locator('td').nth(7).innerText();
 
-      trackRows.push({
+      shipmentRows.push({
         pedido: pedido.trim(),
         status: status.trim(),
         nfe: nfe.trim(),
@@ -168,6 +173,6 @@ export class GoFreteNavigatorService {
       });
     }
 
-    return trackRows;
+    return shipmentRows;
   }
 }

@@ -36,28 +36,28 @@ export class MockController {
       sameSite: 'lax'
     });
 
-    return response.redirect('/mock/tracks');
+    return response.redirect('/mock/shipments');
   }
 
-  @Get('tracks')
-  getTracks(@Req() request: Request, @Res() response: Response) {
+  @Get('shipments')
+  getShipments(@Req() request: Request, @Res() response: Response) {
     if (request.cookies.mock_session !== '1') {
       return response.redirect('/mock/login');
     }
 
     return response.send(`<!DOCTYPE html>
 <html>
-  <head><title>Mock Tracks</title></head>
+  <head><title>Mock Shipments</title></head>
   <body>
-    <h1>Tracks Grid</h1>
-    <table id="ctl00_MainContent_TracksGrid" border="1">
+    <h1>Shipments Grid</h1>
+    <table id="ctl00_MainContent_ShipmentsGrid" border="1">
       <thead>
         <tr><th>externalId</th><th>title</th><th>status</th></tr>
       </thead>
       <tbody>
-        <tr><td>T-001</td><td>First Track</td><td>READY</td></tr>
-        <tr><td>T-002</td><td>Second Track</td><td>IN_PROGRESS</td></tr>
-        <tr><td>T-003</td><td>Third Track</td><td>DONE</td></tr>
+        <tr><td>T-001</td><td>First Shipment</td><td>READY</td></tr>
+        <tr><td>T-002</td><td>Second Shipment</td><td>IN_PROGRESS</td></tr>
+        <tr><td>T-003</td><td>Third Shipment</td><td>DONE</td></tr>
       </tbody>
     </table>
   </body>
