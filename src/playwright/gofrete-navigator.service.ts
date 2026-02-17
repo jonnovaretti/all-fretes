@@ -16,14 +16,14 @@ interface Pagination {
 }
 
 export interface ShipmentRow {
-  pedido: string;
+  trackNumber: string;
   status: string;
-  nfe: string;
-  origem: string;
-  destino: string;
-  criado: string;
-  prazo: string;
-  valor: string;
+  invoiceNumber: string;
+  origin: string;
+  destination: string;
+  startedAt: string;
+  deliveryEstimate: string;
+  value: string;
 }
 
 @Injectable()
@@ -152,24 +152,24 @@ export class GoFreteNavigatorService {
     for (let i = 0; i < count; i++) {
       const row = tableRows.nth(i);
 
-      const pedido = await row.locator('td').nth(0).innerText();
+      const trackNumber = await row.locator('td').nth(0).innerText();
       const status = await row.locator('td').nth(1).innerText();
-      const nfe = await row.locator('td').nth(2).innerText();
-      const origem = await row.locator('td').nth(3).innerText();
-      const destino = await row.locator('td').nth(4).innerText();
-      const criado = await row.locator('td').nth(5).innerText();
-      const prazo = await row.locator('td').nth(6).innerText();
-      const valor = await row.locator('td').nth(7).innerText();
+      const invoice = await row.locator('td').nth(2).innerText();
+      const origin = await row.locator('td').nth(3).innerText();
+      const destination = await row.locator('td').nth(4).innerText();
+      const startedAt = await row.locator('td').nth(5).innerText();
+      const deliveryEstimate = await row.locator('td').nth(6).innerText();
+      const value = await row.locator('td').nth(7).innerText();
 
       shipmentRows.push({
-        pedido: pedido.trim(),
+        trackNumber: trackNumber.trim(),
         status: status.trim(),
-        nfe: nfe.trim(),
-        origem: origem.trim(),
-        destino: destino.trim(),
-        criado: criado.trim(),
-        prazo: prazo.trim(),
-        valor: valor.trim()
+        invoiceNumber: invoice.trim(),
+        origin: origin.trim(),
+        destination: destination.trim(),
+        startedAt: startedAt.trim(),
+        deliveryEstimate: deliveryEstimate.trim(),
+        value: value.trim()
       });
     }
 

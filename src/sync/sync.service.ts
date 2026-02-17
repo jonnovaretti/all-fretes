@@ -124,14 +124,14 @@ export class SyncService implements OnModuleDestroy {
 
       shipmentRows.forEach((t) => {
         parsedShipmentRow.push({
-          externalId: t.pedido,
+          externalId: t.trackNumber,
           status: t.status,
-          origin: t.origem,
-          destination: t.destino,
-          value: parseBRL(t.valor),
-          openedAt: parseBRDate(t.criado),
-          scheduled: t.prazo,
-          invoiceCode: t.nfe
+          origin: t.origin,
+          destination: t.destination,
+          value: parseBRL(t.value),
+          openedAt: parseBRDate(t.startedAt),
+          scheduled: t.deliveryEstimate,
+          invoiceCode: t.invoiceNumber
         });
       });
 
