@@ -139,11 +139,6 @@ export class SyncService implements OnModuleDestroy {
 
       containsNoResultMessage =
         await this.goFreteNavigatorService.containsNoResultMessage(loggedPage);
-
-      await loggedPage.screenshot({
-        path: `debug-${Date.now()}.png`,
-        fullPage: true
-      });
     }
 
     const summary = await this.shipmentsService.upsertShipments(
