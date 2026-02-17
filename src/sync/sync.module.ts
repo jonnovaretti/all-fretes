@@ -5,8 +5,8 @@ import { AccountsModule } from '../accounts/accounts.module';
 import { SYNC_SHIPMENTS_QUEUE_NAME } from '../common/constants';
 import { PlaywrightModule } from '../playwright/playwright.module';
 import { ShipmentsModule } from '../shipments/shipments.module';
+import { ShipmentSyncService, SYNC_QUEUE } from './shipment-sync.service';
 import { SyncController } from './sync.controller';
-import { SyncService, SYNC_QUEUE } from './sync.service';
 
 @Module({
   imports: [AccountsModule, ShipmentsModule, PlaywrightModule],
@@ -38,8 +38,8 @@ import { SyncService, SYNC_QUEUE } from './sync.service';
         });
       }
     },
-    SyncService
+    ShipmentSyncService
   ],
-  exports: [SyncService]
+  exports: [ShipmentSyncService]
 })
 export class SyncModule {}

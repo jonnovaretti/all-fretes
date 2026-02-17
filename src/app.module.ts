@@ -8,7 +8,6 @@ import { queueConfig } from './config/queue.config';
 import { typeOrmConfig } from './config/database.config';
 import { SyncModule } from './sync/sync.module';
 import { ShipmentsModule } from './shipments/shipments.module';
-import { MockModule } from './mock/mock.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -21,7 +20,6 @@ import { HealthModule } from './health/health.module';
     AccountsModule,
     ShipmentsModule,
     SyncModule,
-    MockModule,
     HealthModule
   ]
 })

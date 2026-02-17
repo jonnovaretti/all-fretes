@@ -17,8 +17,8 @@ interface SyncShipmentsJobPayload {
 }
 
 @Injectable()
-export class SyncService implements OnModuleDestroy {
-  private readonly logger = new Logger(SyncService.name);
+export class ShipmentSyncService implements OnModuleDestroy {
+  private readonly logger = new Logger(ShipmentSyncService.name);
   private readonly queueName: string;
   private readonly worker: Worker<SyncShipmentsJobPayload>;
 

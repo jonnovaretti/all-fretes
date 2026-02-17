@@ -1,9 +1,9 @@
 import { Controller, Param, ParseUUIDPipe, Post } from '@nestjs/common';
-import { SyncService } from './sync.service';
+import { ShipmentSyncService } from './shipment-sync.service';
 
 @Controller('accounts/:id/sync')
 export class SyncController {
-  constructor(private readonly syncService: SyncService) {}
+  constructor(private readonly syncService: ShipmentSyncService) {}
 
   @Post()
   sync(@Param('id', ParseUUIDPipe) id: string) {
