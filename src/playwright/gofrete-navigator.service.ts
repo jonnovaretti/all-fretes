@@ -211,10 +211,43 @@ export class GoFreteNavigatorService {
     return shipmentRows;
   }
 
+  private async waitForTrackingPageReady(page: Page): Promise<boolean> {
+    try {
+      await Promise.all([
+        page.waitForSelector('text=Transportadora', {
+          state: 'attached',
+          timeout: 15000
+        }),
+        page.waitForSelector('text=Previsão de entrega', {
+          state: 'attached',
+          timeout: 15000
+        })
+      ]);
+
+      return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes('Timeout')) {
+        return false;
+      }
+
+      throw error;
+    }
+  }
+
   async extractTrackingDataFromPage(page: Page): Promise<TrackingData> {
-    // Wait for the header labels to exist
-    await page.waitForSelector('text=Transportadora');
-    await page.waitForSelector('text=Previsão de entrega');
+    const trackingReady = await this.waitForTrackingPageReady(page);
+    if (!trackingReady) {
+      this.logger.warn(
+        `Tracking page did not render expected header labels at ${page.url()}. Returning empty tracking payload.`
+      );
+
+      return {
+        carrier: '',
+        estimateDate: '',
+        events: []
+      };
+    }
 
     const data = await page.evaluate<TrackingData>(() => {
       const normalize = (s?: string | null) =>

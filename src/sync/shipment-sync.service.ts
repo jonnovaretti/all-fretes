@@ -164,7 +164,9 @@ export class ShipmentSyncService implements OnModuleDestroy {
           scheduled: shipmentRow.deliveryEstimate,
           invoiceCode: shipmentRow.invoiceNumber,
           carrier: shipmentRow.carrier,
-          estimatedDate: parseBRDate(shipmentRow.deliveryEstimateDate ?? ''),
+          estimatedDate: shipmentRow.deliveryEstimateDate
+            ? parseBRDate(shipmentRow.deliveryEstimateDate)
+            : undefined,
           tracking: shipmentRow.trackingRows ? [...parsedTracking] : []
         });
       });
