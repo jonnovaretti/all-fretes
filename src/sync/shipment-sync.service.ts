@@ -125,7 +125,7 @@ export class ShipmentSyncService implements OnModuleDestroy {
           tableRows
         );
 
-      shipmentRows.forEach(async (shipmentRow) => {
+      for (const shipmentRow of shipmentRows) {
         await this.goFreteNavigatorService.goToTrackingPage(
           loggedPage,
           shipmentRow.shipmentId
@@ -139,7 +139,9 @@ export class ShipmentSyncService implements OnModuleDestroy {
         shipmentRow.carrier = trackingEvent.carrier;
         shipmentRow.deliveryEstimateDate = trackingEvent.estimateDate;
         shipmentRow.trackingRows = trackingEvent.events;
-      });
+
+        await this.goFreteNavigatorService.wait(700);
+      }
 
       shipmentRows.forEach((shipmentRow) => {
         const parsedTracking: ParsedTrackingEvent[] = [];

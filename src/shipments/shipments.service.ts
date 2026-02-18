@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Shipment } from './shipment.entity';
+import { Tracking } from './tracking.entity';
 
 export type ParsedTrackingEvent = {
   notifiedAt: Date;
@@ -27,7 +28,9 @@ export interface ParsedShipmentRow {
 export class ShipmentsService {
   constructor(
     @InjectRepository(Shipment)
-    private readonly shipmentRepository: Repository<Shipment>
+    private readonly shipmentRepository: Repository<Shipment>,
+    @InjectRepository(Tracking)
+    private readonly trackingRepository: Repository<Tracking>
   ) {}
 
   findByAccountId(accountId: string) {
@@ -55,6 +58,19 @@ export class ShipmentsService {
       if (found) {
         updated += 1;
         found.status = row.status;
+        found.startedAt = row.openedAt;
+        found.deliveryEstimate = row.scheduled;
+        found.invoiceCode = row.invoiceCode;
+        found.destination = row.destination;
+        found.origin = row.origin;
+        found.value = row.value;
+        if (row.carrier !== undefined) {
+          found.carrier = row.carrier;
+        }
+        if (row.estimatedDate !== undefined) {
+          found.deliveryEstimateDate = row.estimatedDate;
+        }
+
         return found;
       }
 
@@ -75,7 +91,33 @@ export class ShipmentsService {
       });
     });
 
-    await this.shipmentRepository.save(entities);
+    const savedShipments = await this.shipmentRepository.save(entities);
+
+    const shipmentIds = savedShipments.map((shipment) => shipment.id);
+    if (shipmentIds.length) {
+      await this.trackingRepository.delete({ shipmentId: In(shipmentIds) });
+
+      const rowsByExternalId = new Map(rows.map((row) => [row.externalId, row]));
+      const trackingEntities = savedShipments.flatMap((shipment) => {
+        const row = rowsByExternalId.get(shipment.externalId);
+        if (!row?.tracking.length) {
+          return [];
+        }
+
+        return row.tracking.map((trackingEvent) =>
+          this.trackingRepository.create({
+            shipmentId: shipment.id,
+            status: trackingEvent.status,
+            statusDescription: trackingEvent.statusDescription ?? undefined,
+            notifiedAt: trackingEvent.notifiedAt
+          })
+        );
+      });
+
+      if (trackingEntities.length) {
+        await this.trackingRepository.save(trackingEntities);
+      }
+    }
 
     return { inserted, updated };
   }

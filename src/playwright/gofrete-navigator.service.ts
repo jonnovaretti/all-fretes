@@ -126,12 +126,42 @@ export class GoFreteNavigatorService {
 
     shipmentsUrl.searchParams.append('Query', shipmentId);
 
-    this.logger.log(`navigating to ${shipmentsUrl.toString()}`);
+    await this.navigateWithRetry(page, shipmentsUrl.toString());
+  }
 
-    await page.goto(shipmentsUrl.toString(), {
-      timeout: 60000,
-      waitUntil: 'domcontentloaded'
-    });
+  private async navigateWithRetry(page: Page, url: string): Promise<void> {
+    this.logger.log(`navigating to ${url}`);
+
+    try {
+      await page.goto(url, {
+        timeout: 60000,
+        waitUntil: 'domcontentloaded'
+      });
+      return;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const isAborted = message.includes('net::ERR_ABORTED');
+
+      if (!isAborted) {
+        throw error;
+      }
+
+      this.logger.warn(
+        `Navigation aborted while loading ${url}. Waiting for the page to settle before retrying once.`
+      );
+
+      await this.wait(1200);
+      await page.waitForLoadState('networkidle');
+
+      await page.goto(url, {
+        timeout: 60000,
+        waitUntil: 'domcontentloaded'
+      });
+    }
+  }
+
+  async wait(ms: number): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   async readShipmentTable(page: Page): Promise<Locator> {
