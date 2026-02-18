@@ -6,9 +6,10 @@ import { SYNC_SHIPMENTS_QUEUE_NAME } from '../common/constants';
 import { GoFreteNavigatorService } from '../playwright/gofrete-navigator.service';
 import {
   ParsedShipmentRow,
-  ShipmentsService
+  ShipmentsService,
+  ParsedTrackingEvent
 } from '../shipments/shipments.service';
-import { parseBRDate, parseBRL } from './helpers/parse.helper';
+import { parseBRDate, parseBRDateTime, parseBRL } from './helpers/parse.helper';
 
 export const SYNC_QUEUE = 'SYNC_QUEUE';
 
@@ -105,33 +106,64 @@ export class ShipmentSyncService implements OnModuleDestroy {
       await this.goFreteNavigatorService.containsNoResultMessage(loggedPage);
 
     while (!containsNoResultMessage) {
+      await this.goFreteNavigatorService.goToShipmentPage(
+        loggedPage,
+        'collected',
+        {
+          pageNumber,
+          pageSize,
+          orderBy: 'DESC',
+          initialDate: ''
+        }
+      );
+
       const tableRows =
-        await this.goFreteNavigatorService.readShipmentTableByStatus(
-          loggedPage,
-          'collected',
-          {
-            pageNumber,
-            pageSize,
-            orderBy: 'DESC',
-            initialDate: ''
-          }
-        );
+        await this.goFreteNavigatorService.readShipmentTable(loggedPage);
 
       const shipmentRows =
-        await this.goFreteNavigatorService.extractShipmentDataFromRows(
+        await this.goFreteNavigatorService.extractShipmentDataFromTable(
           tableRows
         );
 
-      shipmentRows.forEach((t) => {
+      shipmentRows.forEach(async (shipmentRow) => {
+        await this.goFreteNavigatorService.goToTrackingPage(
+          loggedPage,
+          shipmentRow.shipmentId
+        );
+
+        const trackingEvent =
+          await this.goFreteNavigatorService.extractTrackingDataFromPage(
+            loggedPage
+          );
+
+        shipmentRow.carrier = trackingEvent.carrier;
+        shipmentRow.deliveryEstimateDate = trackingEvent.estimateDate;
+        shipmentRow.trackingRows = trackingEvent.events;
+      });
+
+      shipmentRows.forEach((shipmentRow) => {
+        const parsedTracking: ParsedTrackingEvent[] = [];
+
+        shipmentRow.trackingRows?.forEach((tracking) => {
+          parsedTracking.push({
+            notifiedAt: parseBRDateTime(tracking.date, tracking.time),
+            status: tracking.status,
+            statusDescription: tracking.description
+          });
+        });
+
         parsedShipmentRow.push({
-          externalId: t.trackNumber,
-          status: t.status,
-          origin: t.origin,
-          destination: t.destination,
-          value: parseBRL(t.value),
-          openedAt: parseBRDate(t.startedAt),
-          scheduled: t.deliveryEstimate,
-          invoiceCode: t.invoiceNumber
+          externalId: shipmentRow.shipmentId,
+          status: shipmentRow.status,
+          origin: shipmentRow.origin,
+          destination: shipmentRow.destination,
+          value: parseBRL(shipmentRow.value),
+          openedAt: parseBRDate(shipmentRow.startedAt),
+          scheduled: shipmentRow.deliveryEstimate,
+          invoiceCode: shipmentRow.invoiceNumber,
+          carrier: shipmentRow.carrier,
+          estimatedDate: parseBRDate(shipmentRow.deliveryEstimateDate ?? ''),
+          tracking: shipmentRow.trackingRows ? [...parsedTracking] : []
         });
       });
 

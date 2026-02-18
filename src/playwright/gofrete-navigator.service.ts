@@ -15,8 +15,8 @@ interface Pagination {
   initialDate: string;
 }
 
-export interface ShipmentRow {
-  trackNumber: string;
+interface ShipmentRow {
+  shipmentId: string;
   status: string;
   invoiceNumber: string;
   origin: string;
@@ -24,7 +24,23 @@ export interface ShipmentRow {
   startedAt: string;
   deliveryEstimate: string;
   value: string;
+  deliveryEstimateDate?: string;
+  carrier?: string;
+  trackingRows?: TrackingEvent[];
 }
+
+type TrackingEvent = {
+  date: string; // "17/02/2026"
+  time: string; // "10:41"
+  status: string; // "MERCADORIA ENTREGUE (01)"
+  description: string | null;
+};
+
+type TrackingData = {
+  carrier: string;
+  estimateDate: string; // "20/02/2026"
+  events: TrackingEvent[];
+};
 
 @Injectable()
 export class GoFreteNavigatorService {
@@ -80,11 +96,11 @@ export class GoFreteNavigatorService {
     return counter > 0;
   }
 
-  async readShipmentTableByStatus(
+  async goToShipmentPage(
     page: Page,
     status: string,
     pagination: Pagination
-  ): Promise<Locator> {
+  ): Promise<void> {
     const baseUrl = new URL(page.url()).origin;
     const shipmentsUrl = new URL('/Pedidos', baseUrl);
 
@@ -98,10 +114,28 @@ export class GoFreteNavigatorService {
 
     this.logger.log(`navigating to ${shipmentsUrl.toString()}`);
 
-    await this.navigateWithRetry(page, shipmentsUrl.toString());
+    await page.goto(shipmentsUrl.toString(), {
+      timeout: 60000,
+      waitUntil: 'domcontentloaded'
+    });
+  }
 
+  async goToTrackingPage(page: Page, shipmentId: string): Promise<void> {
+    const baseUrl = new URL(page.url()).origin;
+    const shipmentsUrl = new URL('/Rastreamento', baseUrl);
+
+    shipmentsUrl.searchParams.append('Query', shipmentId);
+
+    this.logger.log(`navigating to ${shipmentsUrl.toString()}`);
+
+    await page.goto(shipmentsUrl.toString(), {
+      timeout: 60000,
+      waitUntil: 'domcontentloaded'
+    });
+  }
+
+  async readShipmentTable(page: Page): Promise<Locator> {
     await page.waitForSelector('table tbody tr');
-
     return page.locator('table tbody tr');
   }
 
@@ -113,36 +147,7 @@ export class GoFreteNavigatorService {
     await page.waitForLoadState('networkidle');
   }
 
-  private async navigateWithRetry(page: Page, url: string): Promise<void> {
-    try {
-      await page.goto(url, {
-        timeout: 60000,
-        waitUntil: 'domcontentloaded'
-      });
-
-      return;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      const isAbortedNavigation = message.includes('ERR_ABORTED');
-
-      if (!isAbortedNavigation) {
-        throw error;
-      }
-
-      this.logger.warn(
-        `Navigation aborted while loading ${url}. Waiting for the page to settle before retrying once.`
-      );
-
-      await page.waitForTimeout(1000);
-
-      await page.goto(url, {
-        timeout: 60000,
-        waitUntil: 'domcontentloaded'
-      });
-    }
-  }
-
-  async extractShipmentDataFromRows(
+  async extractShipmentDataFromTable(
     tableRows: Locator
   ): Promise<ShipmentRow[]> {
     const count = await tableRows.count();
@@ -162,7 +167,7 @@ export class GoFreteNavigatorService {
       const value = await row.locator('td').nth(7).innerText();
 
       shipmentRows.push({
-        trackNumber: trackNumber.trim(),
+        shipmentId: trackNumber.trim(),
         status: status.trim(),
         invoiceNumber: invoice.trim(),
         origin: origin.trim(),
@@ -174,5 +179,74 @@ export class GoFreteNavigatorService {
     }
 
     return shipmentRows;
+  }
+
+  async extractTrackingDataFromPage(page: Page): Promise<TrackingData> {
+    // Wait for the header labels to exist
+    await page.waitForSelector('text=Transportadora');
+    await page.waitForSelector('text=Previsão de entrega');
+
+    const data = await page.evaluate<TrackingData>(() => {
+      const normalize = (s?: string | null) =>
+        (s ?? '')
+          .replace(/\u00A0/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+      // Finds value that appears right after a label in the "header cards"
+      const getHeaderValueByLabel = (labelText: string): string => {
+        const label = Array.from(document.querySelectorAll('div')).find(
+          (el) => normalize(el.textContent) === labelText
+        );
+
+        if (!label) return '';
+
+        // In your HTML, the value is the next sibling <div class="text-xs text-gray-500">
+        const valueEl = label.parentElement?.querySelector(
+          'div.text-xs.text-gray-500'
+        );
+        return normalize(valueEl?.textContent);
+      };
+
+      const transportadora = getHeaderValueByLabel('Transportadora');
+      const previsaoEntrega = getHeaderValueByLabel('Previsão de entrega');
+
+      // Each timeline entry starts with: <div class="flex mx-2"> ... date/time ... status/description ...
+      const eventNodes = Array.from(document.querySelectorAll('div.flex.mx-2'));
+
+      const eventos = eventNodes
+        .map((node) => {
+          // date + time are on the left: two divs (text-black for date, text-gray-500 for time)
+          const dateEl = node.querySelector(
+            '.w-32 .text-right.text-sm.text-black'
+          );
+          const timeEl = node.querySelector(
+            '.w-32 .text-right.text-xs.text-gray-500'
+          );
+
+          // status + description on the right
+          const statusEl = node.querySelector('.text-left.text-sm.font-medium');
+          const descEl = node.querySelector('.text-left.text-xs.text-gray-500');
+
+          const date = normalize(dateEl?.textContent);
+          const time = normalize(timeEl?.textContent);
+          const status = normalize(statusEl?.textContent);
+          const description = normalize(descEl?.textContent) || null;
+
+          // If this "flex mx-2" isn't actually an event row, skip it
+          if (!date && !time && !status) return null;
+
+          return { date, time, status, description };
+        })
+        .filter((e): e is TrackingEvent => Boolean(e));
+
+      return {
+        carrier: transportadora,
+        estimateDate: previsaoEntrega,
+        events: eventos
+      };
+    });
+
+    return data;
   }
 }

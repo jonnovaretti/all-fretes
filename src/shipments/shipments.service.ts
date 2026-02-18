@@ -3,6 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Shipment } from './shipment.entity';
 
+export type ParsedTrackingEvent = {
+  notifiedAt: Date;
+  status: string;
+  statusDescription: string | null;
+};
+
 export interface ParsedShipmentRow {
   externalId: string;
   status: string;
@@ -12,6 +18,9 @@ export interface ParsedShipmentRow {
   value: number;
   openedAt: Date;
   scheduled: string;
+  carrier?: string;
+  estimatedDate?: Date;
+  tracking: ParsedTrackingEvent[];
 }
 
 @Injectable()
@@ -60,7 +69,9 @@ export class ShipmentsService {
         invoiceCode: row.invoiceCode,
         destination: row.destination,
         origin: row.origin,
-        value: row.value
+        value: row.value,
+        carrier: row.carrier,
+        deliveryEstimateDate: row.estimatedDate
       });
     });
 

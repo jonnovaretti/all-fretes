@@ -4,11 +4,13 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   Unique,
   UpdateDateColumn
 } from 'typeorm';
 import { Account } from '../accounts/account.entity';
+import { Tracking } from './tracking.entity';
 
 @Entity('shipments')
 @Unique('UQ_shipments_account_external', ['accountId', 'externalId'])
@@ -24,6 +26,9 @@ export class Shipment {
   })
   @JoinColumn({ name: 'account_id' })
   account!: Account;
+
+  @OneToMany(() => Tracking, (tracking) => tracking.shipment)
+  tracking!: Tracking[];
 
   @Column({ name: 'external_id', type: 'varchar', nullable: false })
   externalId!: string;
@@ -48,6 +53,12 @@ export class Shipment {
 
   @Column({ name: 'delivery_estimate', type: 'varchar', nullable: false })
   deliveryEstimate!: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  carrier!: string;
+
+  @Column({ name: 'delivery_estimate_date', type: 'timestamp', nullable: true })
+  deliveryEstimateDate!: Date;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

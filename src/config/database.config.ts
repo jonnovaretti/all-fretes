@@ -1,8 +1,9 @@
-import { TypeOrmModuleAsyncOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
+import { TypeOrmModuleAsyncOptions } from '@nestjs/typeorm';
 import { DataSourceOptions } from 'typeorm';
 import { Account } from '../accounts/account.entity';
 import { Shipment } from '../shipments/shipment.entity';
+import { Tracking } from '../shipments/tracking.entity';
 
 export function createDataSourceOptions(
   configService?: ConfigService
@@ -14,7 +15,7 @@ export function createDataSourceOptions(
     return {
       type: 'postgres',
       url: databaseUrl,
-      entities: [Account, Shipment],
+      entities: [Account, Shipment, Tracking],
       migrations: [__dirname + '/../migrations/*{.ts,.js}'],
       synchronize: true,
       ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
