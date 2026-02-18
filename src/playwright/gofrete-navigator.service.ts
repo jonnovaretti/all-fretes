@@ -15,7 +15,7 @@ interface Pagination {
   initialDate: string;
 }
 
-interface ShipmentRow {
+export interface ShipmentRow {
   shipmentId: string;
   status: string;
   invoiceNumber: string;
@@ -124,7 +124,7 @@ export class GoFreteNavigatorService {
     const baseUrl = new URL(page.url()).origin;
     const shipmentsUrl = new URL('/Rastreamento', baseUrl);
 
-    shipmentsUrl.searchParams.append('Query', shipmentId);
+    shipmentsUrl.searchParams.append('query', shipmentId);
 
     this.logger.log(`navigating to ${shipmentsUrl.toString()}`);
 
