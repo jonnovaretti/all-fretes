@@ -19,9 +19,6 @@ export interface ParsedShipmentRow {
   value: number;
   openedAt: Date;
   scheduled: string;
-  carrier?: string;
-  estimatedDate?: Date;
-  tracking: ParsedTrackingEvent[];
 }
 
 interface UpdateTrackingPayload {
@@ -78,9 +75,7 @@ export class ShipmentsService {
         invoiceCode: row.invoiceCode,
         destination: row.destination,
         origin: row.origin,
-        value: row.value,
-        carrier: row.carrier,
-        deliveryEstimateDate: row.estimatedDate
+        value: row.value
       });
     });
 
