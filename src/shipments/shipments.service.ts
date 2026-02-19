@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Shipment } from './shipment.entity';
+import { Tracking } from './tracking.entity';
 
 export type ParsedTrackingEvent = {
   notifiedAt: Date;
@@ -23,11 +24,19 @@ export interface ParsedShipmentRow {
   tracking: ParsedTrackingEvent[];
 }
 
+interface UpdateTrackingPayload {
+  carrier: string;
+  estimatedDate: Date;
+  tracking: ParsedTrackingEvent[];
+}
+
 @Injectable()
 export class ShipmentsService {
   constructor(
     @InjectRepository(Shipment)
-    private readonly shipmentRepository: Repository<Shipment>
+    private readonly shipmentRepository: Repository<Shipment>,
+    @InjectRepository(Tracking)
+    private readonly trackingRepository: Repository<Tracking>
   ) {}
 
   findByAccountId(accountId: string) {
@@ -78,5 +87,36 @@ export class ShipmentsService {
     await this.shipmentRepository.save(entities);
 
     return { inserted, updated };
+  }
+
+  async updateShipmentTracking(
+    shipmentId: string,
+    payload: UpdateTrackingPayload
+  ) {
+    const shipment = await this.shipmentRepository.findOneByOrFail({
+      id: shipmentId
+    });
+
+    shipment.carrier = payload.carrier;
+    shipment.deliveryEstimateDate = payload.estimatedDate;
+
+    await this.shipmentRepository.save(shipment);
+
+    await this.trackingRepository.delete({ shipmentId });
+
+    if (!payload.tracking.length) {
+      return;
+    }
+
+    const trackingRows = payload.tracking.map((trackingRow) =>
+      this.trackingRepository.create({
+        shipmentId,
+        status: trackingRow.status,
+        statusDescription: trackingRow.statusDescription ?? undefined,
+        notifiedAt: trackingRow.notifiedAt
+      })
+    );
+
+    await this.trackingRepository.save(trackingRows);
   }
 }
