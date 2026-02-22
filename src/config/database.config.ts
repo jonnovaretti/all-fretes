@@ -44,7 +44,7 @@ export function createDataSourceOptions(
       configService?.get<string>('DB_NAME') ??
       process.env.DB_NAME ??
       'all_fretes',
-    entities: [Account, Shipment],
+    entities: [Account, Shipment, Tracking],
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
     synchronize: false,
   };

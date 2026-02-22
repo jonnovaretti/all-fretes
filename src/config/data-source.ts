@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { Account } from '../accounts/account.entity';
 import { Shipment } from '../shipments/shipment.entity';
+import { Tracking } from '../shipments/tracking.entity';
 
 const isTsNode = __filename.endsWith('.ts');
 
@@ -29,7 +30,7 @@ const baseOptions = databaseUrl
 
 export default new DataSource({
   ...baseOptions,
-  entities: [Account, Shipment],
+  entities: [Account, Shipment, Tracking],
   migrations: [migrationPattern],
   synchronize: false,
 });
