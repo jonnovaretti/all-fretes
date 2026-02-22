@@ -14,14 +14,14 @@ import { HealthModule } from './health/health.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, queueConfig]
+      load: [appConfig, queueConfig],
     }),
     TypeOrmModule.forRootAsync(typeOrmConfig),
     AccountsModule,
     ShipmentsModule,
     SyncModule,
-    HealthModule
-  ]
+    HealthModule,
+  ],
 })
 export class AppModule implements OnApplicationBootstrap {
   constructor(private readonly dataSource: DataSource) {}

@@ -3,7 +3,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  PrimaryGeneratedColumn
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Shipment } from './shipment.entity';
 
@@ -16,7 +16,7 @@ export class Tracking {
   shipmentId!: string;
 
   @ManyToOne(() => Shipment, (shipment) => shipment.tracking, {
-    onDelete: 'CASCADE'
+    onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'shipment_id' })
   shipment!: Shipment;

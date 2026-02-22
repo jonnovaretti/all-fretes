@@ -15,7 +15,8 @@ const baseOptions = databaseUrl
   ? {
       type: 'postgres' as const,
       url: databaseUrl,
-      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
+      ssl:
+        process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     }
   : {
       type: 'postgres' as const,
@@ -23,12 +24,12 @@ const baseOptions = databaseUrl
       port: Number(process.env.DB_PORT ?? 5432),
       username: process.env.DB_USER ?? 'postgres',
       password: process.env.DB_PASS ?? 'postgres',
-      database: process.env.DB_NAME ?? 'all_fretes'
+      database: process.env.DB_NAME ?? 'all_fretes',
     };
 
 export default new DataSource({
   ...baseOptions,
   entities: [Account, Shipment],
   migrations: [migrationPattern],
-  synchronize: false
+  synchronize: false,
 });

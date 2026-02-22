@@ -9,6 +9,6 @@ import { ShipmentsController } from './shipments.controller';
   imports: [TypeOrmModule.forFeature([Shipment, Tracking])],
   providers: [ShipmentsService],
   exports: [ShipmentsService],
-  controllers: [ShipmentsController]
+  controllers: [ShipmentsController],
 })
 export class ShipmentsModule {}

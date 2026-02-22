@@ -25,11 +25,11 @@ export class TrackingSyncService implements OnModuleDestroy {
     private readonly configService: ConfigService,
     private readonly accountsService: AccountsService,
     private readonly shipmentsService: ShipmentsService,
-    private readonly goFreteNavigatorService: GoFreteNavigatorService
+    private readonly goFreteNavigatorService: GoFreteNavigatorService,
   ) {
     this.queueName = this.configService.get<string>(
       'queue.syncTrackingQueueName',
-      SYNC_TRACKING_QUEUE_NAME
+      SYNC_TRACKING_QUEUE_NAME,
     );
 
     const redisConfig = this.configService.get<{
@@ -49,14 +49,14 @@ export class TrackingSyncService implements OnModuleDestroy {
           port: redisConfig?.port,
           username: redisConfig?.username,
           password: redisConfig?.password,
-          maxRetriesPerRequest: null
-        }
-      }
+          maxRetriesPerRequest: null,
+        },
+      },
     );
 
     this.worker.on('completed', (job, result) => {
       this.logger.log(
-        `Job ${job.id} completed with result: ${JSON.stringify(result)}`
+        `Job ${job.id} completed with result: ${JSON.stringify(result)}`,
       );
     });
 
@@ -73,11 +73,11 @@ export class TrackingSyncService implements OnModuleDestroy {
         attempts: 3,
         backoff: {
           type: 'exponential',
-          delay: 1000
+          delay: 1000,
         },
         removeOnComplete: 50,
-        removeOnFail: 50
-      }
+        removeOnFail: 50,
+      },
     );
 
     return { jobId: job.id };
@@ -97,8 +97,8 @@ export class TrackingSyncService implements OnModuleDestroy {
         {
           loginUrl: account.loginUrl,
           username: account.username,
-          password: account.password
-        }
+          password: account.password,
+        },
       );
 
       let synced = 0;
@@ -106,24 +106,24 @@ export class TrackingSyncService implements OnModuleDestroy {
       for (const shipment of shipments) {
         await this.goFreteNavigatorService.goToTrackingPage(
           loggedPage,
-          shipment.externalId
+          shipment.externalId,
         );
 
         const trackingEvent =
           await this.goFreteNavigatorService.extractTrackingDataFromPage(
-            loggedPage
+            loggedPage,
           );
 
         const parsedTracking = trackingEvent.events.map((tracking) => ({
           notifiedAt: parseBRDateTime(tracking.date, tracking.time),
           status: tracking.status,
-          statusDescription: tracking.description
+          statusDescription: tracking.description,
         }));
 
         await this.shipmentsService.updateShipmentTracking(shipment.id, {
           carrier: trackingEvent.carrier,
           estimatedDate: parseBRDate(trackingEvent.estimateDate),
-          tracking: parsedTracking
+          tracking: parsedTracking,
         });
 
         synced += 1;
@@ -134,7 +134,7 @@ export class TrackingSyncService implements OnModuleDestroy {
       return {
         accountId: account.id,
         totalShipments: shipments.length,
-        synced
+        synced,
       };
     } finally {
       await browser.close();

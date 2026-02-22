@@ -5,11 +5,11 @@ import { AccountsService } from '../accounts/accounts.service';
 import { SYNC_SHIPMENTS_QUEUE_NAME } from '../common/constants';
 import {
   GoFreteNavigatorService,
-  ShipmentRow
+  ShipmentRow,
 } from '../playwright/gofrete-navigator.service';
 import {
   ParsedShipmentRow,
-  ShipmentsService
+  ShipmentsService,
 } from '../shipments/shipments.service';
 import { parseBRDate, parseBRL } from './helpers/parse.helper';
 
@@ -30,11 +30,11 @@ export class ShipmentSyncService implements OnModuleDestroy {
     private readonly configService: ConfigService,
     private readonly accountsService: AccountsService,
     private readonly shipmentsService: ShipmentsService,
-    private readonly goFreteNavigatorService: GoFreteNavigatorService
+    private readonly goFreteNavigatorService: GoFreteNavigatorService,
   ) {
     this.queueName = this.configService.get<string>(
       'queue.syncQueueName',
-      SYNC_SHIPMENTS_QUEUE_NAME
+      SYNC_SHIPMENTS_QUEUE_NAME,
     );
 
     const redisConfig = this.configService.get<{
@@ -54,14 +54,14 @@ export class ShipmentSyncService implements OnModuleDestroy {
           port: redisConfig?.port,
           username: redisConfig?.username,
           password: redisConfig?.password,
-          maxRetriesPerRequest: null
-        }
-      }
+          maxRetriesPerRequest: null,
+        },
+      },
     );
 
     this.worker.on('completed', (job, result) => {
       this.logger.log(
-        `Job ${job.id} completed with result: ${JSON.stringify(result)}`
+        `Job ${job.id} completed with result: ${JSON.stringify(result)}`,
       );
     });
 
@@ -78,11 +78,11 @@ export class ShipmentSyncService implements OnModuleDestroy {
         attempts: 3,
         backoff: {
           type: 'exponential',
-          delay: 1000
+          delay: 1000,
         },
         removeOnComplete: 50,
-        removeOnFail: 50
-      }
+        removeOnFail: 50,
+      },
     );
 
     return { jobId: job.id };
@@ -105,8 +105,8 @@ export class ShipmentSyncService implements OnModuleDestroy {
         {
           loginUrl: account.loginUrl,
           username: account.username,
-          password: account.password
-        }
+          password: account.password,
+        },
       );
 
       const fetchShipmentsByStatus = async (status: string): Promise<void> => {
@@ -120,8 +120,8 @@ export class ShipmentSyncService implements OnModuleDestroy {
               pageNumber,
               pageSize,
               orderBy: 'DESC',
-              initialDate: ''
-            }
+              initialDate: '',
+            },
           );
 
           const tableRows =
@@ -129,7 +129,7 @@ export class ShipmentSyncService implements OnModuleDestroy {
 
           const shipmentRows =
             await this.goFreteNavigatorService.extractShipmentDataFromTable(
-              tableRows
+              tableRows,
             );
 
           shipmentList.push(...shipmentRows);
@@ -138,7 +138,7 @@ export class ShipmentSyncService implements OnModuleDestroy {
 
           containsNoResultMessage =
             await this.goFreteNavigatorService.containsNoResultMessage(
-              loggedPage
+              loggedPage,
             );
         } while (!containsNoResultMessage);
       };
@@ -155,13 +155,13 @@ export class ShipmentSyncService implements OnModuleDestroy {
           value: parseBRL(shipmentRow.value),
           openedAt: parseBRDate(shipmentRow.startedAt),
           scheduled: shipmentRow.deliveryEstimate,
-          invoiceCode: shipmentRow.invoiceNumber
+          invoiceCode: shipmentRow.invoiceNumber,
         });
       });
 
       const summary = await this.shipmentsService.upsertShipments(
         account.id,
-        parsedShipmentRow
+        parsedShipmentRow,
       );
 
       this.logger.log(`Sync finished for account ${account.id}`);
@@ -169,7 +169,7 @@ export class ShipmentSyncService implements OnModuleDestroy {
       return {
         accountId: account.id,
         totalRows: parsedShipmentRow.length,
-        ...summary
+        ...summary,
       };
     } finally {
       await browser.close();

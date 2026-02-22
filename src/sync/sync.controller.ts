@@ -6,7 +6,7 @@ import { TrackingSyncService } from './tracking-sync.service';
 export class SyncController {
   constructor(
     private readonly syncService: ShipmentSyncService,
-    private readonly trackingSyncService: TrackingSyncService
+    private readonly trackingSyncService: TrackingSyncService,
   ) {}
 
   @Post()

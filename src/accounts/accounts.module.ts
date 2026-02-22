@@ -9,6 +9,6 @@ import { ShipmentsModule } from '../shipments/shipments.module';
   imports: [TypeOrmModule.forFeature([Account]), ShipmentsModule],
   providers: [AccountsService],
   exports: [AccountsService],
-  controllers: [AccountsController]
+  controllers: [AccountsController],
 })
 export class AccountsModule {}

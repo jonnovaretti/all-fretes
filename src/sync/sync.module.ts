@@ -4,7 +4,7 @@ import { Queue } from 'bullmq';
 import { AccountsModule } from '../accounts/accounts.module';
 import {
   SYNC_SHIPMENTS_QUEUE_NAME,
-  SYNC_TRACKING_QUEUE_NAME
+  SYNC_TRACKING_QUEUE_NAME,
 } from '../common/constants';
 import { PlaywrightModule } from '../playwright/playwright.module';
 import { ShipmentsModule } from '../shipments/shipments.module';
@@ -12,7 +12,7 @@ import { ShipmentSyncService, SYNC_QUEUE } from './shipment-sync.service';
 import { SyncController } from './sync.controller';
 import {
   SYNC_TRACKING_QUEUE,
-  TrackingSyncService
+  TrackingSyncService,
 } from './tracking-sync.service';
 
 @Module({
@@ -25,7 +25,7 @@ import {
       useFactory: (configService: ConfigService) => {
         const queueName = configService.get<string>(
           'queue.syncQueueName',
-          SYNC_SHIPMENTS_QUEUE_NAME
+          SYNC_SHIPMENTS_QUEUE_NAME,
         );
         const redis = configService.get<{
           host: string;
@@ -40,10 +40,10 @@ import {
             port: redis?.port,
             username: redis?.username,
             password: redis?.password,
-            maxRetriesPerRequest: null
-          }
+            maxRetriesPerRequest: null,
+          },
         });
-      }
+      },
     },
     {
       provide: SYNC_TRACKING_QUEUE,
@@ -51,7 +51,7 @@ import {
       useFactory: (configService: ConfigService) => {
         const queueName = configService.get<string>(
           'queue.syncTrackingQueueName',
-          SYNC_TRACKING_QUEUE_NAME
+          SYNC_TRACKING_QUEUE_NAME,
         );
         const redis = configService.get<{
           host: string;
@@ -66,14 +66,14 @@ import {
             port: redis?.port,
             username: redis?.username,
             password: redis?.password,
-            maxRetriesPerRequest: null
-          }
+            maxRetriesPerRequest: null,
+          },
         });
-      }
+      },
     },
     ShipmentSyncService,
-    TrackingSyncService
+    TrackingSyncService,
   ],
-  exports: [ShipmentSyncService, TrackingSyncService]
+  exports: [ShipmentSyncService, TrackingSyncService],
 })
 export class SyncModule {}

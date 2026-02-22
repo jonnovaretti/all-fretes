@@ -6,7 +6,7 @@ import { Shipment } from '../shipments/shipment.entity';
 import { Tracking } from '../shipments/tracking.entity';
 
 export function createDataSourceOptions(
-  configService?: ConfigService
+  configService?: ConfigService,
 ): DataSourceOptions {
   const databaseUrl =
     configService?.get<string>('DATABASE_URL') ?? process.env.DATABASE_URL;
@@ -18,7 +18,8 @@ export function createDataSourceOptions(
       entities: [Account, Shipment, Tracking],
       migrations: [__dirname + '/../migrations/*{.ts,.js}'],
       synchronize: true,
-      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
+      ssl:
+        process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     };
   }
 
@@ -29,7 +30,7 @@ export function createDataSourceOptions(
       process.env.DB_HOST ??
       'localhost',
     port: Number(
-      configService?.get<string>('DB_PORT') ?? process.env.DB_PORT ?? 5432
+      configService?.get<string>('DB_PORT') ?? process.env.DB_PORT ?? 5432,
     ),
     username:
       configService?.get<string>('DB_USER') ??
@@ -45,12 +46,12 @@ export function createDataSourceOptions(
       'all_fretes',
     entities: [Account, Shipment],
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
-    synchronize: false
+    synchronize: false,
   };
 }
 
 export const typeOrmConfig: TypeOrmModuleAsyncOptions = {
   inject: [ConfigService],
   useFactory: (configService: ConfigService) =>
-    createDataSourceOptions(configService)
+    createDataSourceOptions(configService),
 };
