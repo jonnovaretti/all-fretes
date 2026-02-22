@@ -16,6 +16,6 @@ export function parseBRL(value: string): number {
       .replace(/\s/g, '') // remove spaces
       .replace('R$', '') // remove currency
       .replace(/\./g, '') // remove thousands separator
-      .replace(',', '.') // convert decimal separator
+      .replace(',', '.'), // convert decimal separator
   );
 }

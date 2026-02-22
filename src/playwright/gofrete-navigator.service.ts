@@ -51,7 +51,7 @@ export class GoFreteNavigatorService {
   async createBrowser(): Promise<Browser> {
     const headless = this.configService.get<boolean>(
       'app.playwrightHeadless',
-      true
+      true,
     );
 
     return chromium.launch({ headless });
@@ -76,9 +76,9 @@ export class GoFreteNavigatorService {
 
     await Promise.all([
       page.waitForURL((url) => !url.pathname.toLowerCase().includes('entrar'), {
-        timeout: 60000
+        timeout: 60000,
       }),
-      page.getByRole('button', { name: 'Entrar' }).click()
+      page.getByRole('button', { name: 'Entrar' }).click(),
     ]);
 
     await page.waitForLoadState('networkidle');
@@ -99,7 +99,7 @@ export class GoFreteNavigatorService {
   async goToShipmentPage(
     page: Page,
     status: string,
-    pagination: Pagination
+    pagination: Pagination,
   ): Promise<void> {
     const baseUrl = new URL(page.url()).origin;
     const shipmentsUrl = new URL('/Pedidos', baseUrl);
@@ -107,7 +107,7 @@ export class GoFreteNavigatorService {
     shipmentsUrl.searchParams.append('Page', pagination.pageNumber.toString());
     shipmentsUrl.searchParams.append(
       'PageSize',
-      pagination.pageSize.toString()
+      pagination.pageSize.toString(),
     );
     shipmentsUrl.searchParams.append('OrderBy', pagination.orderBy);
     shipmentsUrl.searchParams.append('Situation', status);
@@ -116,7 +116,7 @@ export class GoFreteNavigatorService {
 
     await page.goto(shipmentsUrl.toString(), {
       timeout: 60000,
-      waitUntil: 'domcontentloaded'
+      waitUntil: 'domcontentloaded',
     });
   }
 
@@ -130,7 +130,7 @@ export class GoFreteNavigatorService {
 
     await page.goto(shipmentsUrl.toString(), {
       timeout: 60000,
-      waitUntil: 'domcontentloaded'
+      waitUntil: 'domcontentloaded',
     });
   }
 
@@ -141,14 +141,14 @@ export class GoFreteNavigatorService {
 
   async goToNextPage(page: Page) {
     await Promise.all([
-      await page.locator('button:has(i.mdi-chevron-right)').click()
+      await page.locator('button:has(i.mdi-chevron-right)').click(),
     ]);
 
     await page.waitForLoadState('networkidle');
   }
 
   async extractShipmentDataFromTable(
-    tableRows: Locator
+    tableRows: Locator,
   ): Promise<ShipmentRow[]> {
     const count = await tableRows.count();
 
@@ -174,7 +174,7 @@ export class GoFreteNavigatorService {
         destination: destination.trim(),
         startedAt: startedAt.trim(),
         deliveryEstimate: deliveryEstimate.trim(),
-        value: value.trim()
+        value: value.trim(),
       });
     }
 
@@ -196,14 +196,14 @@ export class GoFreteNavigatorService {
       // Finds value that appears right after a label in the "header cards"
       const getHeaderValueByLabel = (labelText: string): string => {
         const label = Array.from(document.querySelectorAll('div')).find(
-          (el) => normalize(el.textContent) === labelText
+          (el) => normalize(el.textContent) === labelText,
         );
 
         if (!label) return '';
 
         // In your HTML, the value is the next sibling <div class="text-xs text-gray-500">
         const valueEl = label.parentElement?.querySelector(
-          'div.text-xs.text-gray-500'
+          'div.text-xs.text-gray-500',
         );
         return normalize(valueEl?.textContent);
       };
@@ -218,10 +218,10 @@ export class GoFreteNavigatorService {
         .map((node) => {
           // date + time are on the left: two divs (text-black for date, text-gray-500 for time)
           const dateEl = node.querySelector(
-            '.w-32 .text-right.text-sm.text-black'
+            '.w-32 .text-right.text-sm.text-black',
           );
           const timeEl = node.querySelector(
-            '.w-32 .text-right.text-xs.text-gray-500'
+            '.w-32 .text-right.text-xs.text-gray-500',
           );
 
           // status + description on the right
@@ -243,7 +243,7 @@ export class GoFreteNavigatorService {
       return {
         carrier: transportadora,
         estimateDate: previsaoEntrega,
-        events: eventos
+        events: eventos,
       };
     });
 

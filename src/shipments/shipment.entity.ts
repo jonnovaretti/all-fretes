@@ -7,7 +7,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   Unique,
-  UpdateDateColumn
+  UpdateDateColumn,
 } from 'typeorm';
 import { Account } from '../accounts/account.entity';
 import { Tracking } from './tracking.entity';
@@ -22,7 +22,7 @@ export class Shipment {
   accountId!: string;
 
   @ManyToOne(() => Account, (account) => account.shipments, {
-    onDelete: 'CASCADE'
+    onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'account_id' })
   account!: Account;

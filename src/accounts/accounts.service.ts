@@ -8,15 +8,15 @@ import { Account } from './account.entity';
 export class AccountsService {
   constructor(
     @InjectRepository(Account)
-    private readonly accountsRepository: Repository<Account>
+    private readonly accountsRepository: Repository<Account>,
   ) {}
 
   async create(
-    createAccountDto: CreateAccountDto
+    createAccountDto: CreateAccountDto,
   ): Promise<Omit<Account, 'password'>> {
     const account = this.accountsRepository.create({
       ...createAccountDto,
-      loginUrl: createAccountDto.loginUrl ?? 'http://localhost:3000/mock/login'
+      loginUrl: createAccountDto.loginUrl ?? 'http://localhost:3000/mock/login',
     });
 
     const saved = await this.accountsRepository.save(account);

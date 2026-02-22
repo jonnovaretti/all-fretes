@@ -11,7 +11,7 @@ function parseRedisUrl() {
     host: url.hostname,
     port: Number(url.port || 6379),
     username: url.username || undefined,
-    password: url.password || undefined
+    password: url.password || undefined,
   };
 }
 
@@ -23,8 +23,8 @@ export const queueConfig = registerAs('queue', () => {
       host: parsedRedis?.host ?? process.env.REDIS_HOST ?? 'localhost',
       port: parsedRedis?.port ?? Number(process.env.REDIS_PORT ?? 6379),
       username: parsedRedis?.username,
-      password: parsedRedis?.password
+      password: parsedRedis?.password,
     },
-    syncQueueName: SYNC_SHIPMENTS_QUEUE_NAME
+    syncQueueName: SYNC_SHIPMENTS_QUEUE_NAME,
   };
 });

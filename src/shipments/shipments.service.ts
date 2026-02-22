@@ -33,13 +33,13 @@ export class ShipmentsService {
     @InjectRepository(Shipment)
     private readonly shipmentRepository: Repository<Shipment>,
     @InjectRepository(Tracking)
-    private readonly trackingRepository: Repository<Tracking>
+    private readonly trackingRepository: Repository<Tracking>,
   ) {}
 
   findByAccountId(accountId: string) {
     return this.shipmentRepository.find({
       where: { accountId },
-      order: { createdAt: 'DESC' }
+      order: { createdAt: 'DESC' },
     });
   }
 
@@ -49,7 +49,7 @@ export class ShipmentsService {
     }
 
     const existing = await this.shipmentRepository.find({
-      where: { accountId }
+      where: { accountId },
     });
     const map = new Map(existing.map((t) => [t.externalId, t]));
 
@@ -75,7 +75,7 @@ export class ShipmentsService {
         invoiceCode: row.invoiceCode,
         destination: row.destination,
         origin: row.origin,
-        value: row.value
+        value: row.value,
       });
     });
 
@@ -86,10 +86,10 @@ export class ShipmentsService {
 
   async updateShipmentTracking(
     shipmentId: string,
-    payload: UpdateTrackingPayload
+    payload: UpdateTrackingPayload,
   ) {
     const shipment = await this.shipmentRepository.findOneByOrFail({
-      id: shipmentId
+      id: shipmentId,
     });
 
     shipment.carrier = payload.carrier;
@@ -108,8 +108,8 @@ export class ShipmentsService {
         shipmentId,
         status: trackingRow.status,
         statusDescription: trackingRow.statusDescription ?? undefined,
-        notifiedAt: trackingRow.notifiedAt
-      })
+        notifiedAt: trackingRow.notifiedAt,
+      }),
     );
 
     await this.trackingRepository.save(trackingRows);
