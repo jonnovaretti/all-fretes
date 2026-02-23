@@ -140,11 +140,16 @@ export class GoFreteNavigatorService {
   }
 
   async goToNextPage(page: Page) {
-    await Promise.all([
-      await page.locator('button:has(i.mdi-chevron-right)').click(),
-    ]);
+    const nextButton = page.locator('button:has(i.mdi-chevron-right)');
+    await nextButton.scrollIntoViewIfNeeded();
+
+    await nextButton.click();
+
+    // Fallback to DOM click in case Playwright click is intercepted.
+    await nextButton.evaluate((el) => (el as HTMLButtonElement).click());
 
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(250);
   }
 
   async extractShipmentDataFromTable(
