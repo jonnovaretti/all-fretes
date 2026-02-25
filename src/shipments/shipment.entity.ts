@@ -16,53 +16,53 @@ import { Tracking } from './tracking.entity';
 @Unique('UQ_shipments_account_external', ['accountId', 'externalId'])
 export class Shipment {
   @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  id: string;
 
   @Column({ name: 'account_id', type: 'uuid', nullable: false })
-  accountId!: string;
+  accountId: string;
 
   @ManyToOne(() => Account, (account) => account.shipments, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'account_id' })
-  account!: Account;
+  account: Account;
 
   @OneToMany(() => Tracking, (tracking) => tracking.shipment)
-  tracking!: Tracking[];
+  tracking: Tracking[];
 
   @Column({ name: 'external_id', type: 'varchar', nullable: false })
-  externalId!: string;
+  externalId: string;
 
   @Column({ type: 'varchar', nullable: false })
-  status!: string;
+  status: string;
 
   @Column({ name: 'invoice_code', type: 'varchar', nullable: true })
-  invoiceCode!: string;
+  invoiceCode: string | null;
 
   @Column({ type: 'varchar', nullable: false })
-  origin!: string;
+  origin: string;
 
   @Column({ type: 'varchar', nullable: false })
-  destination!: string;
+  destination: string;
 
   @Column({ type: 'varchar', nullable: false })
-  value!: number;
+  value: number;
 
   @Column({ name: 'started_at', type: 'timestamp', nullable: true })
-  startedAt!: Date;
+  startedAt: Date | null;
 
   @Column({ name: 'delivery_estimate', type: 'varchar', nullable: false })
-  deliveryEstimate!: string;
+  deliveryEstimate: string;
 
   @Column({ type: 'varchar', nullable: true })
-  carrier!: string;
+  carrier: string | null;
 
   @Column({ name: 'delivery_estimate_date', type: 'timestamp', nullable: true })
-  deliveryEstimateDate!: Date;
+  deliveryEstimateDate: Date | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  createdAt!: Date;
+  createdAt: Date;
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
-  updatedAt!: Date;
+  updatedAt: Date;
 }

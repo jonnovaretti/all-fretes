@@ -11,27 +11,27 @@ import { Shipment } from '../shipments/shipment.entity';
 @Entity('accounts')
 export class Account {
   @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  id: string;
 
   @Column({ type: 'varchar', nullable: false })
-  name!: string;
+  name: string;
 
   @Column({ name: 'login_url', type: 'varchar', nullable: false })
-  loginUrl!: string;
+  loginUrl: string;
 
   @Column({ type: 'varchar', nullable: false })
-  username!: string;
+  username: string;
 
   // Demo-only: plain-text password storage is intentionally insecure.
   @Column({ type: 'varchar', nullable: false })
-  password!: string;
+  password: string;
 
   @OneToMany(() => Shipment, (shipment) => shipment.account)
-  shipments!: Shipment[];
+  shipments: Shipment[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  createdAt!: Date;
+  createdAt: Date;
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
-  updatedAt!: Date;
+  updatedAt: Date;
 }
