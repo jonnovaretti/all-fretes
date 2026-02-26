@@ -16,7 +16,7 @@ export class AccountsService {
   ): Promise<Omit<Account, 'password'>> {
     const account = this.accountsRepository.create({
       ...createAccountDto,
-      loginUrl: createAccountDto.loginUrl ?? 'http://localhost:3000/mock/login',
+      baseUrl: createAccountDto.baseUrl ?? 'http://localhost:3000/mock/login',
     });
 
     const saved = await this.accountsRepository.save(account);
@@ -33,8 +33,8 @@ export class AccountsService {
   }
 
   private withoutPassword(account: Account): Omit<Account, 'password'> {
-    const { id, name, loginUrl, username, createdAt, updatedAt, shipments } =
+    const { id, name, baseUrl, username, createdAt, updatedAt, shipments } =
       account;
-    return { id, name, loginUrl, username, createdAt, updatedAt, shipments };
+    return { id, name, baseUrl, username, createdAt, updatedAt, shipments };
   }
 }

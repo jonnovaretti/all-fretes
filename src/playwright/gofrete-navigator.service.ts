@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Browser, chromium, Locator, Page } from 'playwright';
 
 interface SignInPage {
-  loginUrl: string;
+  baseUrl: string;
   username: string;
   password: string;
 }
@@ -60,9 +60,10 @@ export class GoFreteNavigatorService {
   async signInPage(browser: Browser, signInPage: SignInPage): Promise<Page> {
     const context = await browser.newContext();
     const page = await context.newPage();
-    const { loginUrl, username, password } = signInPage;
+    const { baseUrl, username, password } = signInPage;
+    const loginUrl = `%{baseUrl}/Entrar`;
 
-    this.logger.log(`Navigating to login URL: ${loginUrl}`);
+    this.logger.log(`Navigating to base URL: ${baseUrl}`);
     await page.goto(loginUrl, { waitUntil: 'networkidle' });
 
     await page

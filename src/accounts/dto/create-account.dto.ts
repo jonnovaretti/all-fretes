@@ -7,7 +7,7 @@ export class CreateAccountDto {
 
   @IsOptional()
   @IsUrl({ require_tld: false })
-  loginUrl?: string;
+  baseUrl?: string;
 
   @IsString()
   @MinLength(1)

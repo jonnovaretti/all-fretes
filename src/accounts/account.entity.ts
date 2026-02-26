@@ -17,7 +17,7 @@ export class Account {
   name: string;
 
   @Column({ name: 'login_url', type: 'varchar', nullable: false })
-  loginUrl: string;
+  baseUrl: string;
 
   @Column({ type: 'varchar', nullable: false })
   username: string;

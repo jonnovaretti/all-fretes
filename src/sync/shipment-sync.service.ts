@@ -103,7 +103,7 @@ export class ShipmentSyncService implements OnModuleDestroy {
       const loggedPage = await this.goFreteNavigatorService.signInPage(
         browser,
         {
-          loginUrl: account.loginUrl,
+          baseUrl: account.baseUrl,
           username: account.username,
           password: account.password,
         },

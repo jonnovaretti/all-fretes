@@ -78,10 +78,10 @@ docker-compose up --build
   "name": "Demo Account",
   "username": "demo",
   "password": "demo",
-  "loginUrl": "http://localhost:3000/mock/login"
+  "baseUrl": "http://localhost:3000/mock/login"
 }
 ```
-`loginUrl` is optional and defaults to `http://localhost:3000/mock/login`.
+`baseUrl` is optional and defaults to `http://localhost:3000/mock/login`.
 
 ### Get shipments for account
 `GET /accounts/:id/shipments`
