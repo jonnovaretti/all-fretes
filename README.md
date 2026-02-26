@@ -56,6 +56,10 @@ src/
 - `REDIS_URL` (preferred) or `REDIS_HOST`, `REDIS_PORT`
 - `PLAYWRIGHT_HEADLESS`
 - `ACCOUNT_PASSWORD_ENCRYPTION_KEY` (32-byte base64; required for encrypting account passwords)
+- `JWT_ACCESS_SECRET` (required)
+- `JWT_REFRESH_SECRET` (required)
+- `JWT_ACCESS_TTL` (optional, default `15m`)
+- `JWT_REFRESH_TTL` (optional, default `7d`)
 
 Copy `.env.example` to `.env` as needed.
 
@@ -72,6 +76,27 @@ docker-compose up --build
 ```
 
 ## API
+### Register
+`POST /auth/register`
+```json
+{
+  "name": "Demo User",
+  "email": "demo@example.com",
+  "password": "demo1234"
+}
+```
+Response includes `accessToken` and `refreshToken`.
+
+### Login
+`POST /auth/login`
+```json
+{
+  "email": "demo@example.com",
+  "password": "demo1234"
+}
+```
+Response includes `accessToken` and `refreshToken`.
+
 ### Create account
 `POST /accounts`
 ```json
