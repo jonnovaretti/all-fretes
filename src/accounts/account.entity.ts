@@ -16,7 +16,7 @@ export class Account {
   @Column({ type: 'varchar', nullable: false })
   name: string;
 
-  @Column({ name: 'login_url', type: 'varchar', nullable: false })
+  @Column({ name: 'base_url', type: 'varchar', nullable: false })
   baseUrl: string;
 
   @Column({ type: 'varchar', nullable: false })

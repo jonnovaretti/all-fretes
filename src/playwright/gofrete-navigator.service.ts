@@ -61,7 +61,7 @@ export class GoFreteNavigatorService {
     const context = await browser.newContext();
     const page = await context.newPage();
     const { baseUrl, username, password } = signInPage;
-    const loginUrl = `%{baseUrl}/Entrar`;
+    const loginUrl = `${baseUrl}/Entrar`;
 
     this.logger.log(`Navigating to base URL: ${baseUrl}`);
     await page.goto(loginUrl, { waitUntil: 'networkidle' });
