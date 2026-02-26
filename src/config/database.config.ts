@@ -4,6 +4,7 @@ import { DataSourceOptions } from 'typeorm';
 import { Account } from '../accounts/account.entity';
 import { Shipment } from '../shipments/shipment.entity';
 import { Tracking } from '../shipments/tracking.entity';
+import { User } from '../users/user.entity';
 
 export function createDataSourceOptions(
   configService?: ConfigService,
@@ -15,7 +16,7 @@ export function createDataSourceOptions(
     return {
       type: 'postgres',
       url: databaseUrl,
-      entities: [Account, Shipment, Tracking],
+      entities: [Account, Shipment, Tracking, User],
       migrations: [__dirname + '/../migrations/*{.ts,.js}'],
       synchronize: true,
       ssl:
@@ -44,7 +45,7 @@ export function createDataSourceOptions(
       configService?.get<string>('DB_NAME') ??
       process.env.DB_NAME ??
       'all_fretes',
-    entities: [Account, Shipment, Tracking],
+    entities: [Account, Shipment, Tracking, User],
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
     synchronize: false,
   };

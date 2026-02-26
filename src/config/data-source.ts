@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import { Account } from '../accounts/account.entity';
 import { Shipment } from '../shipments/shipment.entity';
 import { Tracking } from '../shipments/tracking.entity';
+import { User } from '../users/user.entity';
 
 const isTsNode = __filename.endsWith('.ts');
 
@@ -30,7 +31,7 @@ const baseOptions = databaseUrl
 
 export default new DataSource({
   ...baseOptions,
-  entities: [Account, Shipment, Tracking],
+  entities: [Account, Shipment, Tracking, User],
   migrations: [migrationPattern],
   synchronize: false,
 });

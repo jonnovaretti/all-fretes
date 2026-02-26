@@ -9,6 +9,7 @@ import { typeOrmConfig } from './config/database.config';
 import { SyncModule } from './sync/sync.module';
 import { ShipmentsModule } from './shipments/shipments.module';
 import { HealthModule } from './health/health.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { HealthModule } from './health/health.module';
     }),
     TypeOrmModule.forRootAsync(typeOrmConfig),
     AccountsModule,
+    UsersModule,
     ShipmentsModule,
     SyncModule,
     HealthModule,
