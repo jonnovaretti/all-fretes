@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Shipment } from '../shipments/shipment.entity';
+import { passwordTransformer } from '../common/crypto/password-encryption';
 
 @Entity('accounts')
 export class Account {
@@ -22,8 +23,12 @@ export class Account {
   @Column({ type: 'varchar', nullable: false })
   username: string;
 
-  // Demo-only: plain-text password storage is intentionally insecure.
-  @Column({ type: 'varchar', nullable: false })
+  // Demo-only: encrypted password storage.
+  @Column({
+    type: 'varchar',
+    nullable: false,
+    transformer: passwordTransformer,
+  })
   password: string;
 
   @OneToMany(() => Shipment, (shipment) => shipment.account)

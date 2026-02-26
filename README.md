@@ -55,6 +55,7 @@ src/
 - `DATABASE_URL` (preferred) or `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS`, `DB_NAME`
 - `REDIS_URL` (preferred) or `REDIS_HOST`, `REDIS_PORT`
 - `PLAYWRIGHT_HEADLESS`
+- `ACCOUNT_PASSWORD_ENCRYPTION_KEY` (32-byte base64; required for encrypting account passwords)
 
 Copy `.env.example` to `.env` as needed.
 
@@ -121,4 +122,4 @@ docker-compose up --build
 - `npm run migration:run`
 
 ## Notes
-- Passwords are intentionally stored in plain text for this demo only.
+- Account passwords are stored encrypted at rest using AES-256-GCM and decrypted only when needed.
