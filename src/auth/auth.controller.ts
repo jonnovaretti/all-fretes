@@ -1,4 +1,12 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  NotFoundException,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { Request } from 'express';
 import {
   ApiBody,
@@ -13,6 +21,7 @@ import { AuthService } from './auth.service';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
+import { UserResponseDto } from 'src/users/dto/user-response.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -40,5 +49,20 @@ export class AuthController {
   ): Promise<AuthResponseDto> {
     const user = req.user as User;
     return this.authService.login(user);
+  }
+
+  @UseGuards(LocalAuthGuard)
+  @ApiOperation({ summary: 'Get profile data' })
+  @ApiOkResponse({ type: UserResponseDto })
+  @Get('profile')
+  async profile(@Req() req: Request): Promise<UserResponseDto> {
+    const user = req.user as User;
+    const userProfile = await this.authService.getProfile(user.id);
+
+    if (!userProfile) {
+      throw new NotFoundException();
+    }
+
+    return { name: userProfile.name, email: userProfile.email };
   }
 }

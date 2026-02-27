@@ -42,6 +42,10 @@ export class AuthService {
     return this.issueTokensForUser(user);
   }
 
+  async getProfile(userId: string) {
+    return this.usersService.findById(userId);
+  }
+
   private async issueTokensForUser(user: User) {
     const tokens = await this.buildTokens(user);
     await this.storeRefreshToken(user.id, tokens.refreshToken);

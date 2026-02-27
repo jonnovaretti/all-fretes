@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import {
+  FindShipmentsQueryDto,
+  ShipmentOrderBy,
+} from './dto/find-shipments-query.dto';
 import { Shipment } from './shipment.entity';
 import { Tracking } from './tracking.entity';
 
@@ -27,6 +31,12 @@ interface UpdateTrackingPayload {
   tracking: ParsedTrackingEvent[];
 }
 
+type ShipmentWithCarrierData = Omit<Shipment, 'tracking'> & {
+  carrierStatus: string | null;
+  statusDescription: string | null;
+  lastNotifiedAt: Date | null;
+};
+
 @Injectable()
 export class ShipmentsService {
   constructor(
@@ -36,11 +46,89 @@ export class ShipmentsService {
     private readonly trackingRepository: Repository<Tracking>,
   ) {}
 
-  findByAccountId(accountId: string) {
-    return this.shipmentRepository.find({
-      where: { accountId },
-      order: { createdAt: 'DESC' },
-    });
+  async findByAccountId(
+    accountId: string,
+    query?: FindShipmentsQueryDto,
+  ): Promise<ShipmentWithCarrierData[]> {
+    const shouldPaginate = Boolean(query);
+    const page = query?.page ?? 1;
+    const totalItems = query?.totalItems ?? 10;
+    const orderBy = query?.orderBy ?? ShipmentOrderBy.DESC;
+    const offset = (page - 1) * totalItems;
+
+    const latestCarrierStatusSelect = `
+      (
+        SELECT tracking.status
+        FROM tracking tracking
+        WHERE tracking.shipment_fk_id = shipment.id
+        ORDER BY tracking.notified_at DESC
+        LIMIT 1
+      )
+    `;
+
+    const latestStatusDescriptionSelect = `
+      (
+        SELECT tracking.status_description
+        FROM tracking tracking
+        WHERE tracking.shipment_fk_id = shipment.id
+        ORDER BY tracking.notified_at DESC
+        LIMIT 1
+      )
+    `;
+
+    const latestNotifiedAtSelect = `
+      (
+        SELECT tracking.notified_at
+        FROM tracking tracking
+        WHERE tracking.shipment_fk_id = shipment.id
+        ORDER BY tracking.notified_at DESC
+        LIMIT 1
+      )
+    `;
+
+    const queryBuilder = this.shipmentRepository
+      .createQueryBuilder('shipment')
+      .where('shipment.accountId = :accountId', { accountId })
+      .addSelect(latestCarrierStatusSelect, 'carrierStatus')
+      .addSelect(latestStatusDescriptionSelect, 'statusDescription')
+      .addSelect(latestNotifiedAtSelect, 'lastNotifiedAt')
+      .orderBy('shipment.createdAt', orderBy);
+
+    if (shouldPaginate) {
+      queryBuilder.skip(offset).take(totalItems);
+    }
+
+    if (query?.externalId) {
+      queryBuilder.andWhere('shipment.externalId ILIKE :externalId', {
+        externalId: `%${query.externalId}%`,
+      });
+    }
+
+    if (query?.status) {
+      queryBuilder.andWhere('shipment.status ILIKE :status', {
+        status: `%${query.status}%`,
+      });
+    }
+
+    if (query?.carrierStatus) {
+      queryBuilder.andWhere(
+        `${latestCarrierStatusSelect} ILIKE :carrierStatus`,
+        {
+          carrierStatus: `%${query.carrierStatus}%`,
+        },
+      );
+    }
+
+    const { entities, raw } = await queryBuilder.getRawAndEntities();
+
+    return entities.map((shipment, index) => ({
+      ...shipment,
+      carrierStatus: raw[index]?.carrierStatus ?? null,
+      statusDescription: raw[index]?.statusDescription ?? null,
+      lastNotifiedAt: raw[index]?.lastNotifiedAt
+        ? new Date(raw[index].lastNotifiedAt)
+        : null,
+    }));
   }
 
   async upsertShipments(accountId: string, rows: ParsedShipmentRow[]) {

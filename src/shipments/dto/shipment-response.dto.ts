@@ -34,6 +34,15 @@ export class ShipmentResponseDto {
   @ApiPropertyOptional({ example: 'Correios' })
   carrier?: string | null;
 
+  @ApiPropertyOptional({ example: 'Objeto em transporte' })
+  carrierStatus?: string | null;
+
+  @ApiPropertyOptional({ example: 'Saiu para entrega ao destinatario' })
+  statusDescription?: string | null;
+
+  @ApiPropertyOptional({ example: '2024-06-14T09:22:00.000Z' })
+  lastNotifiedAt?: Date | null;
+
   @ApiPropertyOptional({ example: '2024-06-15T00:00:00.000Z' })
   deliveryEstimateDate?: Date | null;
 

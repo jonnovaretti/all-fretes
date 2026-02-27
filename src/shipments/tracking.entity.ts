@@ -18,7 +18,7 @@ export class Tracking {
   @ManyToOne(() => Shipment, (shipment) => shipment.tracking, {
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'shipment_id' })
+  @JoinColumn({ name: 'shipment_fk_id' })
   shipment: Shipment;
 
   @Column({ type: 'varchar', nullable: false })
