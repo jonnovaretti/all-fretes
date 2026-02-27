@@ -1,23 +1,43 @@
 import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
+import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { User } from '../users/user.entity';
 import { AuthService } from './auth.service';
+import { AuthResponseDto } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @ApiOperation({ summary: 'Register a new user and issue tokens' })
+  @ApiBody({ type: CreateUserDto })
+  @ApiCreatedResponse({ type: AuthResponseDto })
   @Post('register')
-  register(@Body() createUserDto: CreateUserDto) {
+  async register(
+    @Body() createUserDto: CreateUserDto,
+  ): Promise<AuthResponseDto> {
     return this.authService.register(createUserDto);
   }
 
   @UseGuards(LocalAuthGuard)
+  @ApiOperation({ summary: 'Login and issue tokens' })
+  @ApiBody({ type: LoginDto })
+  @ApiOkResponse({ type: AuthResponseDto })
   @Post('login')
-  login(@Body() _loginDto: LoginDto, @Req() req: Request) {
+  async login(
+    @Body() _loginDto: LoginDto,
+    @Req() req: Request,
+  ): Promise<AuthResponseDto> {
     const user = req.user as User;
     return this.authService.login(user);
   }

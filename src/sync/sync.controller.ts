@@ -1,7 +1,15 @@
 import { Controller, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
+import { SyncJobResponseDto } from './dto/sync-job-response.dto';
 import { ShipmentSyncService } from './shipment-sync.service';
 import { TrackingSyncService } from './tracking-sync.service';
 
+@ApiTags('sync')
 @Controller('accounts/:id/sync')
 export class SyncController {
   constructor(
@@ -9,13 +17,23 @@ export class SyncController {
     private readonly trackingSyncService: TrackingSyncService,
   ) {}
 
-  @Post()
-  sync(@Param('id', ParseUUIDPipe) id: string) {
+  @ApiOperation({ summary: 'Enqueue shipment sync for an account' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: SyncJobResponseDto })
+  @Post('shipment')
+  async sync(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<SyncJobResponseDto> {
     return this.syncService.enqueue(id);
   }
 
+  @ApiOperation({ summary: 'Enqueue tracking sync for an account' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: SyncJobResponseDto })
   @Post('tracking')
-  syncTracking(@Param('id', ParseUUIDPipe) id: string) {
+  async syncTracking(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<SyncJobResponseDto> {
     return this.trackingSyncService.enqueue(id);
   }
 }
