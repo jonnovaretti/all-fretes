@@ -37,6 +37,11 @@ type ShipmentWithCarrierData = Omit<Shipment, 'tracking'> & {
   lastNotifiedAt: Date | null;
 };
 
+interface ShipmentIds {
+  id: string;
+  externalId: string;
+}
+
 @Injectable()
 export class ShipmentsService {
   constructor(
@@ -45,6 +50,14 @@ export class ShipmentsService {
     @InjectRepository(Tracking)
     private readonly trackingRepository: Repository<Tracking>,
   ) {}
+
+  async getAllShipmentIds(accountId: string): Promise<ShipmentIds[]> {
+    const shipments = await this.shipmentRepository.findBy({ accountId });
+
+    return shipments.map((s) => {
+      return { id: s.id, externalId: s.externalId };
+    });
+  }
 
   async findByAccountId(
     accountId: string,

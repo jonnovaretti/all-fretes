@@ -87,7 +87,11 @@ export class TrackingSyncService implements OnModuleDestroy {
     this.logger.log(`Starting tracking sync for account ${payload.accountId}`);
 
     const account = await this.accountsService.findOneOrFail(payload.accountId);
-    const shipments = await this.shipmentsService.findByAccountId(account.id);
+    const shipmentsIds = await this.shipmentsService.getAllShipmentIds(
+      account.id,
+    );
+
+    this.logger.log(`shipments`, shipmentsIds);
 
     const browser = await this.goFreteNavigatorService.createBrowser();
 
@@ -103,10 +107,10 @@ export class TrackingSyncService implements OnModuleDestroy {
 
       let synced = 0;
 
-      for (const shipment of shipments) {
+      for (const shipmentIds of shipmentsIds) {
         await this.goFreteNavigatorService.goToTrackingPage(
           loggedPage,
-          shipment.externalId,
+          shipmentIds.externalId,
         );
 
         const trackingEvent =
@@ -120,7 +124,9 @@ export class TrackingSyncService implements OnModuleDestroy {
           statusDescription: tracking.description,
         }));
 
-        await this.shipmentsService.updateShipmentTracking(shipment.id, {
+        this.logger.log('tracking', shipmentIds.externalId, parsedTracking);
+
+        await this.shipmentsService.updateShipmentTracking(shipmentIds.id, {
           carrier: trackingEvent.carrier,
           estimatedDate: parseBRDate(trackingEvent.estimateDate),
           tracking: parsedTracking,
@@ -133,7 +139,7 @@ export class TrackingSyncService implements OnModuleDestroy {
 
       return {
         accountId: account.id,
-        totalShipments: shipments.length,
+        totalShipments: shipmentsIds.length,
         synced,
       };
     } finally {
