@@ -20,7 +20,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(payload: JwtPayload) {
-    return { userId: payload.sub, email: payload.email, admin: payload.admin };
+    return { id: payload.sub, email: payload.email, admin: payload.admin };
   }
 
   private static getSecret(configService: ConfigService): string {

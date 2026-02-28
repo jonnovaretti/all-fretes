@@ -1,5 +1,6 @@
-import { Controller, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { Controller, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -8,8 +9,10 @@ import {
 import { SyncJobResponseDto } from './dto/sync-job-response.dto';
 import { ShipmentSyncService } from './shipment-sync.service';
 import { TrackingSyncService } from './tracking-sync.service';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @ApiTags('sync')
+@ApiBearerAuth()
 @Controller('accounts/:id/sync')
 export class SyncController {
   constructor(
@@ -20,6 +23,7 @@ export class SyncController {
   @ApiOperation({ summary: 'Enqueue shipment sync for an account' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: SyncJobResponseDto })
+  @UseGuards(JwtAuthGuard)
   @Post('shipment')
   async sync(
     @Param('id', ParseUUIDPipe) id: string,
@@ -30,6 +34,7 @@ export class SyncController {
   @ApiOperation({ summary: 'Enqueue tracking sync for an account' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: SyncJobResponseDto })
+  @UseGuards(JwtAuthGuard)
   @Post('tracking')
   async syncTracking(
     @Param('id', ParseUUIDPipe) id: string,

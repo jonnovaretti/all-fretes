@@ -97,6 +97,12 @@ Response includes `accessToken` and `refreshToken`.
 ```
 Response includes `accessToken` and `refreshToken`.
 
+### Authenticated routes
+Use header:
+```txt
+Authorization: Bearer <accessToken>
+```
+
 ### Create account
 `POST /accounts`
 ```json
@@ -113,7 +119,8 @@ Response includes `accessToken` and `refreshToken`.
 `GET /accounts/:id/shipments`
 
 ### Enqueue sync
-`POST /accounts/:id/sync`
+`POST /accounts/:id/sync/shipment`
+`POST /accounts/:id/sync/tracking`
 
 ### Health
 `GET /health`

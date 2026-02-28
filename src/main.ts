@@ -26,6 +26,7 @@ async function bootstrap() {
     .setTitle('All Fretes Sync Service')
     .setDescription('API for account sync and shipment tracking')
     .setVersion('1.0.0')
+    .addBearerAuth()
     .build();
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, swaggerDocument);
