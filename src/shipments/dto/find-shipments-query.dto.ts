@@ -35,6 +35,11 @@ export class FindShipmentsQueryDto {
   @IsString()
   externalId?: string;
 
+  @ApiPropertyOptional({ example: 'INV-98765' })
+  @IsOptional()
+  @IsString()
+  invoiceCode?: string;
+
   @ApiPropertyOptional({ example: 'finished' })
   @IsOptional()
   @IsString()

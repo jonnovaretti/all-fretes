@@ -104,6 +104,12 @@ export class ShipmentsService {
       });
     }
 
+    if (query?.invoiceCode) {
+      queryBuilder.andWhere('shipment.invoiceCode ILIKE :invoiceCode', {
+        invoiceCode: `%${query.invoiceCode}%`,
+      });
+    }
+
     if (query?.status) {
       queryBuilder.andWhere('shipment.status ILIKE :status', {
         status: `%${query.status}%`,
