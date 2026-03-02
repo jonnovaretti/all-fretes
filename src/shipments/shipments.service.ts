@@ -150,8 +150,11 @@ export class ShipmentsService {
     }));
   }
 
-  async upsertShipments(accountId: string, rows: ParsedShipmentRow[]) {
-    if (!rows.length) {
+  async upsertShipments(
+    accountId: string,
+    parsedShipments: ParsedShipmentRow[],
+  ) {
+    if (!parsedShipments.length) {
       return { inserted: 0, updated: 0 };
     }
 
@@ -163,11 +166,13 @@ export class ShipmentsService {
     let inserted = 0;
     let updated = 0;
 
-    const entities = rows.map((row) => {
-      const found = map.get(row.externalId);
+    const entities = parsedShipments.map((parsedShipment) => {
+      const found = map.get(parsedShipment.externalId);
       if (found) {
-        updated += 1;
-        found.status = row.status;
+        if (found.status !== parsedShipment.status) {
+          updated += 1;
+          found.status = parsedShipment.status;
+        }
         return found;
       }
 
@@ -175,18 +180,20 @@ export class ShipmentsService {
 
       return this.shipmentRepository.create({
         accountId,
-        externalId: row.externalId,
-        status: row.status,
-        startedAt: row.openedAt,
-        deliveryEstimate: row.scheduled,
-        invoiceCode: row.invoiceCode,
-        destination: row.destination,
-        origin: row.origin,
-        value: row.value,
+        externalId: parsedShipment.externalId,
+        status: parsedShipment.status,
+        startedAt: parsedShipment.openedAt,
+        deliveryEstimate: parsedShipment.scheduled,
+        invoiceCode: parsedShipment.invoiceCode,
+        destination: parsedShipment.destination,
+        origin: parsedShipment.origin,
+        value: parsedShipment.value,
       });
     });
 
-    await this.shipmentRepository.save(entities);
+    if (inserted > 0 || updated > 0) {
+      await this.shipmentRepository.save(entities);
+    }
 
     return { inserted, updated };
   }

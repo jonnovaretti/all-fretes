@@ -14,9 +14,10 @@ import {
   SYNC_TRACKING_QUEUE,
   TrackingSyncService,
 } from './tracking-sync.service';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  imports: [AccountsModule, ShipmentsModule, PlaywrightModule],
+  imports: [HttpModule, AccountsModule, ShipmentsModule, PlaywrightModule],
   controllers: [SyncController],
   providers: [
     {

@@ -12,11 +12,45 @@ import {
   ShipmentsService,
 } from '../shipments/shipments.service';
 import { parseBRDate, parseBRL } from './helpers/parse.helper';
+import { HttpService } from '@nestjs/axios';
+import { catchError, firstValueFrom, map } from 'rxjs';
+import { AxiosResponse } from 'axios';
 
 export const SYNC_QUEUE = 'SYNC_QUEUE';
 
 interface SyncShipmentsJobPayload {
   accountId: string;
+}
+
+export interface Quotation {
+  id: number;
+  status: number;
+  statusText: string;
+  date: string; // The raw string: "/Date(1771692164163)/"
+  total: number;
+  deadline: number;
+  nfe: string;
+  originCity: string;
+  destinationCity: string;
+  isPaid: boolean;
+  isFinished: boolean;
+  isFinishedReal: boolean;
+  isChargeback: boolean;
+  isCollected: boolean;
+  isStartTransport: boolean;
+}
+
+// The version of the object we actually want to use in our UI/Logic
+export interface ParsedQuotation extends Omit<Quotation, 'date'> {
+  date: Date;
+}
+
+export interface ApiResponse {
+  success: boolean;
+  data: {
+    total: number;
+    quotations: Quotation[];
+  };
 }
 
 @Injectable()
@@ -31,6 +65,7 @@ export class ShipmentSyncService implements OnModuleDestroy {
     private readonly accountsService: AccountsService,
     private readonly shipmentsService: ShipmentsService,
     private readonly goFreteNavigatorService: GoFreteNavigatorService,
+    private readonly httpService: HttpService,
   ) {
     this.queueName = this.configService.get<string>(
       'queue.syncQueueName',
@@ -91,12 +126,8 @@ export class ShipmentSyncService implements OnModuleDestroy {
   async handleSync(payload: SyncShipmentsJobPayload) {
     this.logger.log(`Starting sync for account ${payload.accountId}`);
 
-    const pageNumber = 1;
-    const pageSize = 10;
     const parsedShipmentRow: ParsedShipmentRow[] = [];
     const account = await this.accountsService.findOneOrFail(payload.accountId);
-    const shipmentList: ShipmentRow[] = [];
-
     const browser = await this.goFreteNavigatorService.createBrowser();
 
     try {
@@ -109,53 +140,83 @@ export class ShipmentSyncService implements OnModuleDestroy {
         },
       );
 
-      const fetchShipmentsByStatus = async (status: string): Promise<void> => {
-        let containsNoResultMessage = false;
+      const cookies = await loggedPage.context().cookies();
 
-        do {
-          await this.goFreteNavigatorService.goToShipmentPage(
-            loggedPage,
-            status,
-            {
-              pageNumber,
-              pageSize,
-              orderBy: 'DESC',
-              initialDate: '',
-            },
-          );
+      const cookiesConcat = cookies
+        .flatMap((c) => {
+          if (
+            c.name.toLowerCase().includes('aspnet') ||
+            c.name.toLowerCase().includes('asp.net') ||
+            c.name.toLowerCase().includes('gofretes')
+          ) {
+            return `${c.name}=${c.value};`;
+          }
+        })
+        .join();
 
-          const tableRows =
-            await this.goFreteNavigatorService.readShipmentTable(loggedPage);
+      const fetchShipmentsByStatus = async (
+        status: string,
+      ): Promise<ParsedQuotation[]> => {
+        const encodedParams = new URLSearchParams();
+        encodedParams.set('Page', '1');
+        encodedParams.set('PageSize', '1000');
+        encodedParams.set('OrderBy', 'DESC');
+        encodedParams.set('Situation', status);
 
-          const shipmentRows =
-            await this.goFreteNavigatorService.extractShipmentDataFromTable(
-              tableRows,
-            );
+        const parsedShipments = await firstValueFrom(
+          this.httpService
+            .post<ApiResponse>(
+              `${account.baseUrl}/Quotation/Quotations`,
+              encodedParams,
+              {
+                headers: {
+                  'content-type':
+                    'application/x-www-form-urlencoded; charset=UTF-8',
+                  cookie: cookiesConcat,
+                },
+              },
+            )
+            .pipe(
+              map((response: AxiosResponse<ApiResponse>) => {
+                if (!response.data.success) {
+                  throw new Error('API reported failure');
+                }
 
-          shipmentList.push(...shipmentRows);
+                // Map the raw DTOs to our Parsed Interface
+                return response.data.data.quotations.map((q) =>
+                  this.parseQuotation(q),
+                );
+              }),
+              catchError((err) => {
+                this.logger.error('Failed to fetch quotations', err.stack);
+                throw err;
+              }),
+            ),
+        );
 
-          await this.goFreteNavigatorService.goToNextPage(loggedPage);
-
-          containsNoResultMessage =
-            await this.goFreteNavigatorService.containsNoResultMessage(
-              loggedPage,
-            );
-        } while (!containsNoResultMessage);
+        return parsedShipments;
       };
 
-      await fetchShipmentsByStatus('collected');
-      await fetchShipmentsByStatus('finished');
+      const collectedShipment = await fetchShipmentsByStatus('collected');
+      const finishedShipment = await fetchShipmentsByStatus('finished');
 
-      shipmentList.forEach((shipmentRow) => {
+      this.logger.log(
+        'par',
+        collectedShipment.length,
+        'fin',
+        finishedShipment.length,
+      );
+
+      [...collectedShipment, ...finishedShipment].forEach((shipement) => {
         parsedShipmentRow.push({
-          externalId: shipmentRow.shipmentId,
-          status: shipmentRow.status,
-          origin: shipmentRow.origin,
-          destination: shipmentRow.destination,
-          value: parseBRL(shipmentRow.value),
-          openedAt: parseBRDate(shipmentRow.startedAt),
-          scheduled: shipmentRow.deliveryEstimate,
-          invoiceCode: shipmentRow.invoiceNumber,
+          externalId: shipement.id.toString(),
+          status: shipement.isFinished ? 'ENTREGUE' : 'TRANSPORTE INICIADO',
+          origin: shipement.originCity,
+          destination: shipement.destinationCity,
+          value: shipement.total,
+          openedAt: shipement.date,
+          scheduled: `${shipement.deadline} dias uteis`,
+          invoiceCode: shipement.nfe,
         });
       });
 
@@ -174,6 +235,16 @@ export class ShipmentSyncService implements OnModuleDestroy {
     } finally {
       await browser.close();
     }
+  }
+
+  private parseQuotation(q: Quotation): ParsedQuotation {
+    const match = q.date.match(/\/Date\((\d+)\)\//);
+    const timestamp = match ? parseInt(match[1], 10) : 0;
+
+    return {
+      ...q,
+      date: new Date(timestamp),
+    };
   }
 
   async onModuleDestroy() {
