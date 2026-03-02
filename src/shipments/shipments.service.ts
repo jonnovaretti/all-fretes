@@ -61,12 +61,15 @@ export class ShipmentsService {
 
   async getShipmentsToSyncConsolidatedStatus(
     accountId: string,
+    forceAllAccounts?: boolean,
   ): Promise<Shipment[]> {
-    return this.shipmentRepository
+    const query = this.shipmentRepository
       .createQueryBuilder('shipment')
       .leftJoinAndSelect('shipment.tracking', 'tracking')
-      .where('shipment.accountId = :accountId', { accountId })
-      .andWhere(
+      .where('shipment.accountId = :accountId', { accountId });
+
+    if (!forceAllAccounts) {
+      query.andWhere(
         '(shipment.consolidatedStatus IS NULL OR shipment.consolidatedStatus NOT IN (:...statuses))',
         {
           statuses: [
@@ -74,8 +77,10 @@ export class ShipmentsService {
             ConsolidatedShipmentStatus.RETURNING,
           ],
         },
-      )
-      .getMany();
+      );
+    }
+
+    return query.getMany();
   }
 
   async findByAccountId(

@@ -1,8 +1,10 @@
 import {
   Controller,
   Param,
+  ParseBoolPipe,
   ParseUUIDPipe,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -55,7 +57,9 @@ export class SyncController {
   @Post('consolidated-status')
   async syncConsolidatedStatus(
     @Param('id', ParseUUIDPipe) id: string,
+    @Query('forceAllAccounts', ParseBoolPipe) forceAllAccounts: boolean,
   ): Promise<SyncJobResponseDto> {
-    return this.consolidatedStatusSyncService.enqueue(id);
+    console.log('forceeeee', forceAllAccounts);
+    return this.consolidatedStatusSyncService.enqueue(id, forceAllAccounts);
   }
 }

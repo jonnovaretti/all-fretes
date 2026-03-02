@@ -13,6 +13,7 @@ export const SYNC_CONSOLIDATED_STATUS_QUEUE = 'SYNC_CONSOLIDATED_STATUS_QUEUE';
 
 interface SyncConsolidatedStatusJobPayload {
   accountId: string;
+  forceAllAccounts?: boolean;
 }
 
 @Injectable()
@@ -66,10 +67,10 @@ export class ConsolidatedStatusSyncService implements OnModuleDestroy {
     });
   }
 
-  async enqueue(accountId: string) {
+  async enqueue(accountId: string, forceAllAccounts: boolean) {
     const job = await this.queue.add(
       'sync-consolidated-status-job',
-      { accountId },
+      { accountId, forceAllAccounts },
       {
         attempts: 3,
         backoff: {
@@ -93,6 +94,7 @@ export class ConsolidatedStatusSyncService implements OnModuleDestroy {
     const shipments =
       await this.shipmentsService.getShipmentsToSyncConsolidatedStatus(
         account.id,
+        payload.forceAllAccounts,
       );
 
     let updated = 0;
@@ -125,14 +127,10 @@ export class ConsolidatedStatusSyncService implements OnModuleDestroy {
   ): ConsolidatedShipmentStatus {
     const shipmentStatus = shipment.status.toLowerCase();
 
-    this.logger.log('shipment', shipment.status, shipment.tracking);
-
     const trackingStatuses = (shipment.tracking ?? [])
       .map((tracking) => tracking.status)
       .filter((value): value is string => Boolean(value))
       .map((value) => value.toLowerCase());
-
-    this.logger.log('trackingStatuses', trackingStatuses);
 
     const trackingValues = (shipment.tracking ?? [])
       .flatMap((tracking) => [
@@ -142,15 +140,13 @@ export class ConsolidatedStatusSyncService implements OnModuleDestroy {
       .filter((value): value is string => Boolean(value))
       .map((value) => value.toLowerCase());
 
-    this.logger.log('trackingValues', trackingValues);
+    if (
+      trackingValues.some((value) => /\b(?:return\w*|devol\w*)\b/i.test(value))
+    ) {
+      return ConsolidatedShipmentStatus.RETURNING;
+    }
 
     if (shipmentStatus === 'entregue') {
-      if (
-        trackingValues.some((value) => /\breturn(ing)?\b|retorn/i.test(value))
-      ) {
-        return ConsolidatedShipmentStatus.RETURNING;
-      }
-
       if (
         trackingStatuses.some((value) =>
           /\bentregue\b|\bentrega\b|\bfinalizada\b/i.test(value),
