@@ -12,6 +12,13 @@ import {
 import { Account } from '../accounts/account.entity';
 import { Tracking } from './tracking.entity';
 
+export enum ConsolidatedShipmentStatus {
+  DELAYED = 'delayed',
+  FINISHED = 'finished',
+  RETURNING = 'returning',
+  IN_TRANSIT = 'in transit',
+}
+
 @Entity('shipments')
 @Unique('UQ_shipments_account_external', ['accountId', 'externalId'])
 export class Shipment {
@@ -59,6 +66,9 @@ export class Shipment {
 
   @Column({ name: 'delivery_estimate_date', type: 'timestamp', nullable: true })
   deliveryEstimateDate: Date | null;
+
+  @Column({ name: 'consolidated_status', type: 'varchar', nullable: true })
+  consolidatedStatus: ConsolidatedShipmentStatus | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;

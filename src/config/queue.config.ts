@@ -1,4 +1,8 @@
-import { SYNC_SHIPMENTS_QUEUE_NAME } from '../common/constants';
+import {
+  SYNC_CONSOLIDATED_STATUS_QUEUE_NAME,
+  SYNC_SHIPMENTS_QUEUE_NAME,
+  SYNC_TRACKING_QUEUE_NAME,
+} from '../common/constants';
 import { registerAs } from '@nestjs/config';
 
 function parseRedisUrl() {
@@ -26,5 +30,7 @@ export const queueConfig = registerAs('queue', () => {
       password: parsedRedis?.password,
     },
     syncQueueName: SYNC_SHIPMENTS_QUEUE_NAME,
+    syncTrackingQueueName: SYNC_TRACKING_QUEUE_NAME,
+    syncConsolidatedStatusQueueName: SYNC_CONSOLIDATED_STATUS_QUEUE_NAME,
   };
 });

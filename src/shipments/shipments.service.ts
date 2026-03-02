@@ -5,7 +5,7 @@ import {
   FindShipmentsQueryDto,
   ShipmentOrderBy,
 } from './dto/find-shipments-query.dto';
-import { Shipment } from './shipment.entity';
+import { ConsolidatedShipmentStatus, Shipment } from './shipment.entity';
 import { Tracking } from './tracking.entity';
 
 export type ParsedTrackingEvent = {
@@ -57,6 +57,25 @@ export class ShipmentsService {
     return shipments.map((s) => {
       return { id: s.id, externalId: s.externalId };
     });
+  }
+
+  async getShipmentsToSyncConsolidatedStatus(
+    accountId: string,
+  ): Promise<Shipment[]> {
+    return this.shipmentRepository
+      .createQueryBuilder('shipment')
+      .leftJoinAndSelect('shipment.tracking', 'tracking')
+      .where('shipment.accountId = :accountId', { accountId })
+      .andWhere(
+        '(shipment.consolidatedStatus IS NULL OR shipment.consolidatedStatus NOT IN (:...statuses))',
+        {
+          statuses: [
+            ConsolidatedShipmentStatus.FINISHED,
+            ConsolidatedShipmentStatus.RETURNING,
+          ],
+        },
+      )
+      .getMany();
   }
 
   async findByAccountId(
@@ -227,5 +246,15 @@ export class ShipmentsService {
     );
 
     await this.trackingRepository.save(trackingRows);
+  }
+
+  async updateConsolidatedStatus(
+    shipmentId: string,
+    consolidatedStatus: ConsolidatedShipmentStatus | null,
+  ) {
+    await this.shipmentRepository.update(
+      { id: shipmentId },
+      { consolidatedStatus },
+    );
   }
 }

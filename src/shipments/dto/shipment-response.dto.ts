@@ -46,6 +46,14 @@ export class ShipmentResponseDto {
   @ApiPropertyOptional({ example: '2024-06-15T00:00:00.000Z' })
   deliveryEstimateDate?: Date | null;
 
+  @ApiPropertyOptional({ example: 'delayed' })
+  consolidatedStatus?:
+    | 'delayed'
+    | 'finished'
+    | 'returning'
+    | 'in transit'
+    | null;
+
   @ApiProperty({ example: '2024-06-01T12:34:56.000Z' })
   createdAt: Date;
 
