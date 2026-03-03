@@ -91,8 +91,6 @@ export class TrackingSyncService implements OnModuleDestroy {
       account.id,
     );
 
-    this.logger.log(`shipments`, shipmentsIds);
-
     const browser = await this.goFreteNavigatorService.createBrowser();
 
     try {
@@ -130,7 +128,14 @@ export class TrackingSyncService implements OnModuleDestroy {
 
         // date convertion got error
         if (deliveryEstimatedDate.getFullYear() === 1900) {
-          deliveryEstimatedDate = parsedTrackings[0].notifiedAt;
+          const estimatedDate =
+            shipmentIds.startedAt ?? parsedTrackings[0].notifiedAt;
+
+          estimatedDate.setDate(
+            estimatedDate.getDate() + shipmentIds.totalDaysEstimate,
+          );
+
+          deliveryEstimatedDate = estimatedDate;
         }
 
         await this.shipmentsService.updateShipmentTracking(shipmentIds.id, {

@@ -28,8 +28,8 @@ export class ShipmentResponseDto {
   @ApiPropertyOptional({ example: '2024-06-01T12:34:56.000Z' })
   startedAt?: Date | null;
 
-  @ApiProperty({ example: '15/06/2024' })
-  deliveryEstimate: string;
+  @ApiProperty({ example: 5 })
+  totalDaysEstimated: number;
 
   @ApiPropertyOptional({ example: 'Correios' })
   carrier?: string | null;

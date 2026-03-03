@@ -22,7 +22,7 @@ export interface ParsedShipmentRow {
   destination: string;
   value: number;
   openedAt: Date;
-  scheduled: string;
+  scheduled: number;
 }
 
 interface UpdateTrackingPayload {
@@ -40,6 +40,8 @@ type ShipmentWithCarrierData = Omit<Shipment, 'tracking'> & {
 interface ShipmentIds {
   id: string;
   externalId: string;
+  totalDaysEstimate: number;
+  startedAt: Date | null;
 }
 
 @Injectable()
@@ -55,7 +57,12 @@ export class ShipmentsService {
     const shipments = await this.shipmentRepository.findBy({ accountId });
 
     return shipments.map((s) => {
-      return { id: s.id, externalId: s.externalId };
+      return {
+        id: s.id,
+        externalId: s.externalId,
+        totalDaysEstimate: s.totalDaysEstimated,
+        startedAt: s.startedAt,
+      };
     });
   }
 
@@ -207,7 +214,7 @@ export class ShipmentsService {
         externalId: parsedShipment.externalId,
         status: parsedShipment.status,
         startedAt: parsedShipment.openedAt,
-        deliveryEstimate: parsedShipment.scheduled,
+        totalDaysEstimated: parsedShipment.scheduled,
         invoiceCode: parsedShipment.invoiceCode,
         destination: parsedShipment.destination,
         origin: parsedShipment.origin,

@@ -3,15 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import { Queue, Worker } from 'bullmq';
 import { AccountsService } from '../accounts/accounts.service';
 import { SYNC_SHIPMENTS_QUEUE_NAME } from '../common/constants';
-import {
-  GoFreteNavigatorService,
-  ShipmentRow,
-} from '../playwright/gofrete-navigator.service';
+import { GoFreteNavigatorService } from '../playwright/gofrete-navigator.service';
 import {
   ParsedShipmentRow,
   ShipmentsService,
 } from '../shipments/shipments.service';
-import { parseBRDate, parseBRL } from './helpers/parse.helper';
 import { HttpService } from '@nestjs/axios';
 import { catchError, firstValueFrom, map } from 'rxjs';
 import { AxiosResponse } from 'axios';
@@ -215,7 +211,7 @@ export class ShipmentSyncService implements OnModuleDestroy {
           destination: shipement.destinationCity,
           value: shipement.total,
           openedAt: shipement.date,
-          scheduled: `${shipement.deadline} dias uteis`,
+          scheduled: shipement.deadline,
           invoiceCode: shipement.nfe,
         });
       });

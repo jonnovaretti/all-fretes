@@ -1,7 +1,13 @@
 export function parseBRDate(dateToConvert: string): Date {
   try {
     const [day, month, year] = dateToConvert.split('/');
-    return new Date(Number(year), Number(month) - 1, Number(day));
+    const convertedDate = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+    );
+
+    return convertedDate;
   } catch {
     return new Date(1900, 1, 1);
   }

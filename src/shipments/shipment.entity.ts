@@ -58,8 +58,8 @@ export class Shipment {
   @Column({ name: 'started_at', type: 'timestamp', nullable: true })
   startedAt: Date | null;
 
-  @Column({ name: 'delivery_estimate', type: 'varchar', nullable: false })
-  deliveryEstimate: string;
+  @Column({ name: 'total_days_estimated', type: 'integer', nullable: false })
+  totalDaysEstimated: number;
 
   @Column({ type: 'varchar', nullable: true })
   carrier: string | null;
