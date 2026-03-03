@@ -118,18 +118,25 @@ export class TrackingSyncService implements OnModuleDestroy {
             loggedPage,
           );
 
-        const parsedTracking = trackingEvent.events.map((tracking) => ({
+        const parsedTrackings = trackingEvent.events.map((tracking) => ({
           notifiedAt: parseBRDateTime(tracking.date, tracking.time),
           status: tracking.status,
           statusDescription: tracking.description,
         }));
 
-        this.logger.log('tracking', shipmentIds.externalId, parsedTracking);
+        this.logger.log(`Upsert tracking - ${shipmentIds.externalId}`);
+
+        let deliveryEstimatedDate = parseBRDate(trackingEvent.estimateDate);
+
+        // date convertion got error
+        if (deliveryEstimatedDate.getFullYear() === 1900) {
+          deliveryEstimatedDate = parsedTrackings[0].notifiedAt;
+        }
 
         await this.shipmentsService.updateShipmentTracking(shipmentIds.id, {
           carrier: trackingEvent.carrier,
-          estimatedDate: parseBRDate(trackingEvent.estimateDate),
-          tracking: parsedTracking,
+          estimatedDate: deliveryEstimatedDate,
+          tracking: parsedTrackings,
         });
 
         synced += 1;

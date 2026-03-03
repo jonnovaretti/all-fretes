@@ -59,7 +59,6 @@ export class SyncController {
     @Param('id', ParseUUIDPipe) id: string,
     @Query('forceAllAccounts', ParseBoolPipe) forceAllAccounts: boolean,
   ): Promise<SyncJobResponseDto> {
-    console.log('forceeeee', forceAllAccounts);
     return this.consolidatedStatusSyncService.enqueue(id, forceAllAccounts);
   }
 }

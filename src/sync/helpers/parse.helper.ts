@@ -1,6 +1,10 @@
-export function parseBRDate(value: string): Date {
-  const [day, month, year] = value.split('/');
-  return new Date(Number(year), Number(month) - 1, Number(day));
+export function parseBRDate(dateToConvert: string): Date {
+  try {
+    const [day, month, year] = dateToConvert.split('/');
+    return new Date(Number(year), Number(month) - 1, Number(day));
+  } catch {
+    return new Date(1900, 1, 1);
+  }
 }
 
 export function parseBRDateTime(dateStr: string, timeStr: string): Date {
