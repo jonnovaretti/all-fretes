@@ -128,14 +128,17 @@ export class TrackingSyncService implements OnModuleDestroy {
 
         // date convertion got error
         if (deliveryEstimatedDate.getFullYear() === 1900) {
-          const estimatedDate =
-            shipmentIds.startedAt ?? parsedTrackings[0].notifiedAt;
+          const baseEstimatedDate = shipmentIds.startedAt
+            ? new Date(shipmentIds.startedAt)
+            : parsedTrackings[0]?.notifiedAt
+              ? new Date(parsedTrackings[0].notifiedAt)
+              : new Date();
 
-          estimatedDate.setDate(
-            estimatedDate.getDate() + shipmentIds.totalDaysEstimate,
+          baseEstimatedDate.setDate(
+            baseEstimatedDate.getDate() + shipmentIds.totalDaysEstimate,
           );
 
-          deliveryEstimatedDate = estimatedDate;
+          deliveryEstimatedDate = baseEstimatedDate;
         }
 
         await this.shipmentsService.updateShipmentTracking(shipmentIds.id, {

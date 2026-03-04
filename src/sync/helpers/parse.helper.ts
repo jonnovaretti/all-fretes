@@ -1,23 +1,62 @@
-export function parseBRDate(dateToConvert: string): Date {
-  try {
-    const [day, month, year] = dateToConvert.split('/');
-    const convertedDate = new Date(
-      Number(year),
-      Number(month) - 1,
-      Number(day),
-    );
+const FALLBACK_YEAR = 1900;
 
-    return convertedDate;
-  } catch {
-    return new Date(1900, 1, 1);
+function createFallbackDate(): Date {
+  return new Date(FALLBACK_YEAR, 0, 1, 0, 0, 0, 0);
+}
+
+function isValidDate(date: Date): boolean {
+  return !Number.isNaN(date.getTime());
+}
+
+export function parseBRDate(dateToConvert: string): Date {
+  const match = dateToConvert.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!match) return createFallbackDate();
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  const convertedDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+
+  // Reject rolled-over dates like 31/02/2026.
+  if (
+    !isValidDate(convertedDate) ||
+    convertedDate.getFullYear() !== year ||
+    convertedDate.getMonth() !== month - 1 ||
+    convertedDate.getDate() !== day
+  ) {
+    return createFallbackDate();
   }
+
+  return convertedDate;
 }
 
 export function parseBRDateTime(dateStr: string, timeStr: string): Date {
-  const [day, month, year] = dateStr.split('/').map(Number);
-  const [hour, minute] = timeStr.split(':').map(Number);
+  const parsedDate = parseBRDate(dateStr);
+  if (parsedDate.getFullYear() === FALLBACK_YEAR) {
+    return parsedDate;
+  }
 
-  return new Date(year, month - 1, day, hour, minute, 0, 0);
+  const timeMatch = timeStr?.trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!timeMatch) return parsedDate;
+
+  const hour = Number(timeMatch[1]);
+  const minute = Number(timeMatch[2]);
+
+  if (hour > 23 || minute > 59) {
+    return parsedDate;
+  }
+
+  const result = new Date(
+    parsedDate.getFullYear(),
+    parsedDate.getMonth(),
+    parsedDate.getDate(),
+    hour,
+    minute,
+    0,
+    0,
+  );
+
+  return isValidDate(result) ? result : createFallbackDate();
 }
 
 export function parseBRL(value: string): number {

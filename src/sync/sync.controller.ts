@@ -53,7 +53,6 @@ export class SyncController {
   @ApiOperation({ summary: 'Enqueue consolidated status sync for an account' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: SyncJobResponseDto })
-  @UseGuards(JwtAuthGuard)
   @Post('consolidated-status')
   async syncConsolidatedStatus(
     @Param('id', ParseUUIDPipe) id: string,

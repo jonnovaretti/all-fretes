@@ -14,6 +14,10 @@ async function bootstrap() {
     origin: 'http://localhost:3001',
     credentials: true,
   });
+  app.enableCors({
+    origin: 'https://all-fretes-web-production.up.railway.app',
+    credentials: true,
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

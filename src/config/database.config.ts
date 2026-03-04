@@ -12,6 +12,8 @@ export function createDataSourceOptions(
   const databaseUrl =
     configService?.get<string>('DATABASE_URL') ?? process.env.DATABASE_URL;
 
+  console.log(databaseUrl);
+
   if (databaseUrl) {
     return {
       type: 'postgres',
