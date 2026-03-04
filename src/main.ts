@@ -8,14 +8,20 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+  const allowedOrigins = [
+    'http://localhost:3001',
+    'https://all-fretes-web-production.up.railway.app',
+  ];
 
   app.use(cookieParser());
   app.enableCors({
-    origin: 'http://localhost:3001',
-    credentials: true,
-  });
-  app.enableCors({
-    origin: 'https://all-fretes-web-production.up.railway.app',
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
     credentials: true,
   });
   app.useGlobalPipes(
