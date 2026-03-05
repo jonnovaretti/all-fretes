@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { ConsolidatedShipmentStatus } from '../shipment.entity';
 
 export enum ShipmentOrderBy {
   ASC = 'ASC',
@@ -49,4 +50,9 @@ export class FindShipmentsQueryDto {
   @IsOptional()
   @IsString()
   carrierStatus?: string;
+
+  @ApiPropertyOptional({ enum: ConsolidatedShipmentStatus })
+  @IsOptional()
+  @IsEnum(ConsolidatedShipmentStatus)
+  consolidatedStatus?: ConsolidatedShipmentStatus;
 }

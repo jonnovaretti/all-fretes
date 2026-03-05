@@ -169,6 +169,13 @@ export class ShipmentsService {
       );
     }
 
+    if (query?.consolidatedStatus) {
+      queryBuilder.andWhere(
+        'shipment.consolidatedStatus = :consolidatedStatus',
+        { consolidatedStatus: query.consolidatedStatus },
+      );
+    }
+
     const { entities, raw } = await queryBuilder.getRawAndEntities();
 
     return entities.map((shipment, index) => ({
