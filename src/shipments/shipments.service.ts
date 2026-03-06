@@ -42,6 +42,7 @@ interface ShipmentIds {
   externalId: string;
   totalDaysEstimate: number;
   startedAt: Date | null;
+  consolidateStatus: ConsolidatedShipmentStatus | null;
 }
 
 @Injectable()
@@ -62,6 +63,7 @@ export class ShipmentsService {
         externalId: s.externalId,
         totalDaysEstimate: s.totalDaysEstimated,
         startedAt: s.startedAt,
+        consolidateStatus: s.consolidatedStatus,
       };
     });
   }

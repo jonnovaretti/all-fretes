@@ -141,7 +141,12 @@ export class ConsolidatedStatusSyncService implements OnModuleDestroy {
       .map((value) => value.toLowerCase());
 
     if (
-      trackingValues.some((value) => /\b(?:return\w*|devol\w*)\b/i.test(value))
+      trackingValues.some((value) =>
+        /\b(?:return\w*|devol\w*|ressal\w*)\b/i.test(value),
+      ) ||
+      trackingStatuses.some((value) =>
+        /\b(?:return\w*|devol\w*|ressal\w*)\b/i.test(value),
+      )
     ) {
       return ConsolidatedShipmentStatus.RETURNING;
     }

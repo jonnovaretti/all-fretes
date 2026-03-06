@@ -6,6 +6,7 @@ import { SYNC_TRACKING_QUEUE_NAME } from '../common/constants';
 import { GoFreteNavigatorService } from '../playwright/gofrete-navigator.service';
 import { ShipmentsService } from '../shipments/shipments.service';
 import { parseBRDate, parseBRDateTime } from './helpers/parse.helper';
+import { ConsolidatedShipmentStatus } from 'src/shipments/shipment.entity';
 
 export const SYNC_TRACKING_QUEUE = 'SYNC_TRACKING_QUEUE';
 
@@ -106,6 +107,14 @@ export class TrackingSyncService implements OnModuleDestroy {
       let synced = 0;
 
       for (const shipmentIds of shipmentsIds) {
+        if (
+          shipmentIds.consolidateStatus ===
+            ConsolidatedShipmentStatus.FINISHED ||
+          shipmentIds.consolidateStatus === ConsolidatedShipmentStatus.RETURNING
+        ) {
+          continue;
+        }
+
         await this.goFreteNavigatorService.goToTrackingPage(
           loggedPage,
           shipmentIds.externalId,
