@@ -23,6 +23,12 @@ export class AccountsService {
     return this.withoutPassword(saved);
   }
 
+  async findAll(): Promise<Pick<Account, 'id' | 'name' | 'username'>[]> {
+    return this.accountsRepository.find({
+      select: ['id', 'name', 'username'],
+    });
+  }
+
   async findOneOrFail(id: string): Promise<Account> {
     const account = await this.accountsRepository.findOne({ where: { id } });
     if (!account) {
@@ -30,6 +36,11 @@ export class AccountsService {
     }
 
     return account;
+  }
+
+  async findOne(id: string): Promise<Omit<Account, 'password'>> {
+    const account = await this.findOneOrFail(id);
+    return this.withoutPassword(account);
   }
 
   private withoutPassword(account: Account): Omit<Account, 'password'> {
