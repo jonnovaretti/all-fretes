@@ -1,0 +1,100 @@
+@startuml C4_Components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component Diagram — all-fretes Sync Service
+
+' ── External actors & systems ──────────────────────────────────────────────
+Person(apiClient, "API Client", "Any HTTP client consuming the REST API")
+System_Ext(gofrete, "GoFrete Portal", "Carrier portal (web UI + internal HTTP API)\n/Entrar  /Pedidos  /Rastreamento\n/Quotation/Quotations")
+SystemDb_Ext(postgres, "PostgreSQL", "Persistent store for accounts,\nusers, shipments, and tracking events")
+SystemDb_Ext(redis, "Redis", "BullMQ job queues\n(sync-shipments, sync-tracking,\nsync-consolidated-status)")
+
+' ── NestJS Application boundary ────────────────────────────────────────────
+Container_Boundary(app, "all-fretes NestJS App") {
+
+  ' Auth
+  Component(authCtrl, "AuthController", "NestJS Controller", "POST /auth/register\nPOST /auth/login\nGET  /auth/profile")
+  Component(authSvc,  "AuthService",    "NestJS Service",    "Registers users (bcrypt hash),\nissues JWT access + refresh tokens")
+  Component(jwtStrat, "JwtStrategy",   "Passport Strategy", "Validates Bearer token from Authorization header")
+  Component(localStrat,"LocalStrategy","Passport Strategy", "Validates email/password on login")
+
+  ' Users
+  Component(usersSvc, "UsersService", "NestJS Service", "Creates and finds users in DB")
+
+  ' Accounts
+  Component(accountsCtrl, "AccountsController", "NestJS Controller", "GET/POST /accounts\nGET /accounts/:id")
+  Component(accountsSvc,  "AccountsService",    "NestJS Service",    "CRUD for carrier portal credentials.\nPasswords encrypted via AES-256-GCM transformer")
+
+  ' Shipments
+  Component(shipmentsCtrl, "ShipmentsController", "NestJS Controller", "GET /shipments\n(filterable by accountId, consolidatedStatus)")
+  Component(shipmentsSvc,  "ShipmentsService",    "NestJS Service",    "Upsert shipments, update tracking,\ncompute consolidated status queries")
+
+  ' Sync — controller
+  Component(syncCtrl, "SyncController", "NestJS Controller", "POST /accounts/:id/sync/shipment\nPOST /accounts/:id/sync/tracking\nPOST /accounts/:id/sync/consolidated-status")
+
+  ' Sync — workers
+  Component(shipSyncSvc, "ShipmentSyncService", "BullMQ Worker\n(concurrency 2)", "Logs in via Playwright to obtain session\ncookies, then calls GoFrete HTTP API\n(/Quotation/Quotations) for collected +\nfinished statuses; upserts results")
+
+  Component(trackSyncSvc, "TrackingSyncService", "BullMQ Worker\n(concurrency 2)", "For each shipment, navigates\n/Rastreamento via Playwright and\nscrapes tracking timeline events")
+
+  Component(csSyncSvc, "ConsolidatedStatusSyncService", "BullMQ Worker\n(concurrency 2)", "Pure DB computation — applies\nbusiness rules to derive\nconsolidatedStatus:\ndelayed / finished / returning / in_transit")
+
+  ' Playwright
+  Component(pwSvc, "GoFreteNavigatorService", "Playwright Wrapper", "Creates browser instances,\nlogs in at /Entrar, navigates\n/Pedidos and /Rastreamento,\nextracts table rows and timeline events")
+
+  ' Health
+  Component(healthCtrl, "HealthController", "NestJS Controller", "GET /health — liveness probe")
+}
+
+' ── API Client interactions ─────────────────────────────────────────────────
+Rel(apiClient, authCtrl,      "HTTPS",  "register / login / profile")
+Rel(apiClient, accountsCtrl,  "HTTPS",  "manage accounts")
+Rel(apiClient, shipmentsCtrl, "HTTPS",  "query shipments")
+Rel(apiClient, syncCtrl,      "HTTPS",  "trigger sync jobs")
+Rel(apiClient, healthCtrl,    "HTTPS",  "liveness check")
+
+' ── Auth internals ──────────────────────────────────────────────────────────
+Rel(authCtrl,   authSvc,    "calls")
+Rel(authCtrl,   localStrat, "guarded by LocalAuthGuard")
+Rel(authCtrl,   jwtStrat,   "guarded by JwtAuthGuard")
+Rel(authSvc,    usersSvc,   "delegates user lookup/creation")
+Rel(usersSvc,   postgres,   "reads/writes", "TypeORM")
+Rel(jwtStrat,   usersSvc,   "validates subject")
+
+' ── Accounts internals ──────────────────────────────────────────────────────
+Rel(accountsCtrl, accountsSvc, "calls")
+Rel(accountsSvc,  postgres,    "reads/writes", "TypeORM (password encrypted at-rest)")
+
+' ── Shipments internals ─────────────────────────────────────────────────────
+Rel(shipmentsCtrl, shipmentsSvc, "calls")
+Rel(shipmentsSvc,  postgres,     "reads/writes", "TypeORM")
+
+' ── Sync controller → workers ───────────────────────────────────────────────
+Rel(syncCtrl, shipSyncSvc,  "enqueues job", "BullMQ (sync-shipments)")
+Rel(syncCtrl, trackSyncSvc, "enqueues job", "BullMQ (sync-tracking)")
+Rel(syncCtrl, csSyncSvc,    "enqueues job", "BullMQ (sync-consolidated-status)")
+
+' ── Worker → Redis queues ───────────────────────────────────────────────────
+Rel(shipSyncSvc,  redis, "reads/writes jobs", "ioredis")
+Rel(trackSyncSvc, redis, "reads/writes jobs", "ioredis")
+Rel(csSyncSvc,    redis, "reads/writes jobs", "ioredis")
+
+' ── Worker internals ────────────────────────────────────────────────────────
+Rel(shipSyncSvc,  accountsSvc,  "loads account credentials")
+Rel(shipSyncSvc,  pwSvc,        "login to obtain session cookies")
+Rel(shipSyncSvc,  gofrete,      "POST /Quotation/Quotations", "HTTPS + session cookie")
+Rel(shipSyncSvc,  shipmentsSvc, "upserts shipments")
+
+Rel(trackSyncSvc, accountsSvc,  "loads account credentials")
+Rel(trackSyncSvc, pwSvc,        "scrapes /Rastreamento per shipment")
+Rel(trackSyncSvc, shipmentsSvc, "updates tracking events")
+
+Rel(csSyncSvc, accountsSvc,  "loads account")
+Rel(csSyncSvc, shipmentsSvc, "reads shipments + writes consolidatedStatus")
+
+' ── Playwright → GoFrete ────────────────────────────────────────────────────
+Rel(pwSvc, gofrete, "browser automation", "Playwright (Chromium)\n/Entrar  /Pedidos  /Rastreamento")
+
+@enduml

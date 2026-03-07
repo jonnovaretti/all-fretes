@@ -5,6 +5,7 @@ import {
   NotFoundException,
   Post,
   Req,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
@@ -20,7 +21,6 @@ import { CreateUserDto } from '../users/dto/create-user.dto';
 import { User } from '../users/user.entity';
 import { AuthService } from './auth.service';
 import { AuthResponseDto } from './dto/auth-response.dto';
-import { LocalAuthGuard } from './guards/local-auth.guard';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UserResponseDto } from 'src/users/dto/user-response.dto';
@@ -40,16 +40,18 @@ export class AuthController {
     return this.authService.register(createUserDto);
   }
 
-  @UseGuards(LocalAuthGuard)
   @ApiOperation({ summary: 'Login and issue tokens' })
   @ApiBody({ type: LoginDto })
   @ApiOkResponse({ type: AuthResponseDto })
   @Post('login')
-  async login(
-    @Body() _loginDto: LoginDto,
-    @Req() req: Request,
-  ): Promise<AuthResponseDto> {
-    const user = req.user as User;
+  async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
+    const user = await this.authService.validateUser(
+      loginDto.email,
+      loginDto.password,
+    );
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
     return this.authService.login(user);
   }
 
