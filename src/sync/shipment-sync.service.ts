@@ -1,6 +1,6 @@
-import { Inject, Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Queue, Worker } from 'bullmq';
+import { Queue } from 'bullmq';
 import { AccountsService } from '../accounts/accounts.service';
 import { SYNC_SHIPMENTS_QUEUE_NAME } from '../common/constants';
 import { GoFreteNavigatorService } from '../playwright/gofrete-navigator.service';
@@ -11,12 +11,10 @@ import {
 import { HttpService } from '@nestjs/axios';
 import { catchError, firstValueFrom, map } from 'rxjs';
 import { AxiosResponse } from 'axios';
+import { AbstractSyncService } from './abstract-sync.service';
+import { BaseSyncJobPayload } from './interfaces/base-sync-job-payload.interface';
 
 export const SYNC_QUEUE = 'SYNC_QUEUE';
-
-interface SyncShipmentsJobPayload {
-  accountId: string;
-}
 
 export interface Quotation {
   id: number;
@@ -50,76 +48,24 @@ export interface ApiResponse {
 }
 
 @Injectable()
-export class ShipmentSyncService implements OnModuleDestroy {
-  private readonly logger = new Logger(ShipmentSyncService.name);
-  private readonly queueName: string;
-  private readonly worker: Worker<SyncShipmentsJobPayload>;
-
+export class ShipmentSyncService extends AbstractSyncService<BaseSyncJobPayload> {
   constructor(
-    @Inject(SYNC_QUEUE) private readonly queue: Queue<SyncShipmentsJobPayload>,
-    private readonly configService: ConfigService,
+    @Inject(SYNC_QUEUE) queue: Queue<BaseSyncJobPayload>,
+    configService: ConfigService,
     private readonly accountsService: AccountsService,
     private readonly shipmentsService: ShipmentsService,
     private readonly goFreteNavigatorService: GoFreteNavigatorService,
     private readonly httpService: HttpService,
   ) {
-    this.queueName = this.configService.get<string>(
-      'queue.syncQueueName',
-      SYNC_SHIPMENTS_QUEUE_NAME,
-    );
-
-    const redisConfig = this.configService.get<{
-      host: string;
-      port: number;
-      username?: string;
-      password?: string;
-    }>('queue.redis');
-
-    this.worker = new Worker(
-      this.queueName,
-      async (job) => this.handleSync(job.data),
-      {
-        concurrency: 2,
-        connection: {
-          host: redisConfig?.host,
-          port: redisConfig?.port,
-          username: redisConfig?.username,
-          password: redisConfig?.password,
-          maxRetriesPerRequest: null,
-        },
-      },
-    );
-
-    this.worker.on('completed', (job, result) => {
-      this.logger.log(
-        `Job ${job.id} completed with result: ${JSON.stringify(result)}`,
-      );
-    });
-
-    this.worker.on('failed', (job, error) => {
-      this.logger.error(`Job ${job?.id} failed: ${error.message}`);
+    super(queue, configService, {
+      queueConfigKey: 'queue.syncQueueName',
+      defaultQueueName: SYNC_SHIPMENTS_QUEUE_NAME,
+      jobName: 'sync-shipments-job',
+      loggerContext: ShipmentSyncService.name,
     });
   }
 
-  async enqueue(accountId: string) {
-    const job = await this.queue.add(
-      'sync-shipments-job',
-      { accountId },
-      {
-        attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 1000,
-        },
-        removeOnComplete: 50,
-        removeOnFail: 50,
-      },
-    );
-
-    return { jobId: job.id };
-  }
-
-  async handleSync(payload: SyncShipmentsJobPayload) {
+  async handleSync(payload: BaseSyncJobPayload) {
     this.logger.log(`Starting sync for account ${payload.accountId}`);
 
     const parsedShipmentRow: ParsedShipmentRow[] = [];
@@ -241,9 +187,5 @@ export class ShipmentSyncService implements OnModuleDestroy {
       ...q,
       date: new Date(timestamp),
     };
-  }
-
-  async onModuleDestroy() {
-    await this.worker.close();
   }
 }

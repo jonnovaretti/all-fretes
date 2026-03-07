@@ -37,7 +37,7 @@ export class SyncController {
   async sync(
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<SyncJobResponseDto> {
-    return this.syncService.enqueue(id);
+    return this.syncService.enqueue({ accountId: id });
   }
 
   @ApiOperation({ summary: 'Enqueue tracking sync for an account' })
@@ -47,7 +47,7 @@ export class SyncController {
   async syncTracking(
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<SyncJobResponseDto> {
-    return this.trackingSyncService.enqueue(id);
+    return this.trackingSyncService.enqueue({ accountId: id });
   }
 
   @ApiOperation({ summary: 'Enqueue consolidated status sync for an account' })
@@ -58,6 +58,9 @@ export class SyncController {
     @Param('id', ParseUUIDPipe) id: string,
     @Query('forceAllAccounts', ParseBoolPipe) forceAllAccounts: boolean,
   ): Promise<SyncJobResponseDto> {
-    return this.consolidatedStatusSyncService.enqueue(id, forceAllAccounts);
+    return this.consolidatedStatusSyncService.enqueue({
+      accountId: id,
+      forceAllAccounts,
+    });
   }
 }

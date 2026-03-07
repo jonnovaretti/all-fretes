@@ -1,90 +1,36 @@
-import { Inject, Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Queue, Worker } from 'bullmq';
+import { Queue } from 'bullmq';
 import { AccountsService } from '../accounts/accounts.service';
 import { SYNC_TRACKING_QUEUE_NAME } from '../common/constants';
 import { GoFreteNavigatorService } from '../playwright/gofrete-navigator.service';
 import { ShipmentsService } from '../shipments/shipments.service';
 import { parseBRDate, parseBRDateTime } from './helpers/parse.helper';
 import { ConsolidatedShipmentStatus } from 'src/shipments/shipment.entity';
+import { AbstractSyncService } from './abstract-sync.service';
+import { BaseSyncJobPayload } from './interfaces/base-sync-job-payload.interface';
 
 export const SYNC_TRACKING_QUEUE = 'SYNC_TRACKING_QUEUE';
 
-interface SyncTrackingJobPayload {
-  accountId: string;
-}
-
 @Injectable()
-export class TrackingSyncService implements OnModuleDestroy {
-  private readonly logger = new Logger(TrackingSyncService.name);
-  private readonly queueName: string;
-  private readonly worker: Worker<SyncTrackingJobPayload>;
-
+export class TrackingSyncService extends AbstractSyncService<BaseSyncJobPayload> {
   constructor(
     @Inject(SYNC_TRACKING_QUEUE)
-    private readonly queue: Queue<SyncTrackingJobPayload>,
-    private readonly configService: ConfigService,
+    queue: Queue<BaseSyncJobPayload>,
+    configService: ConfigService,
     private readonly accountsService: AccountsService,
     private readonly shipmentsService: ShipmentsService,
     private readonly goFreteNavigatorService: GoFreteNavigatorService,
   ) {
-    this.queueName = this.configService.get<string>(
-      'queue.syncTrackingQueueName',
-      SYNC_TRACKING_QUEUE_NAME,
-    );
-
-    const redisConfig = this.configService.get<{
-      host: string;
-      port: number;
-      username?: string;
-      password?: string;
-    }>('queue.redis');
-
-    this.worker = new Worker(
-      this.queueName,
-      async (job) => this.handleSync(job.data),
-      {
-        concurrency: 2,
-        connection: {
-          host: redisConfig?.host,
-          port: redisConfig?.port,
-          username: redisConfig?.username,
-          password: redisConfig?.password,
-          maxRetriesPerRequest: null,
-        },
-      },
-    );
-
-    this.worker.on('completed', (job, result) => {
-      this.logger.log(
-        `Job ${job.id} completed with result: ${JSON.stringify(result)}`,
-      );
-    });
-
-    this.worker.on('failed', (job, error) => {
-      this.logger.error(`Job ${job?.id} failed: ${error.message}`);
+    super(queue, configService, {
+      queueConfigKey: 'queue.syncTrackingQueueName',
+      defaultQueueName: SYNC_TRACKING_QUEUE_NAME,
+      jobName: 'sync-tracking-job',
+      loggerContext: TrackingSyncService.name,
     });
   }
 
-  async enqueue(accountId: string) {
-    const job = await this.queue.add(
-      'sync-tracking-job',
-      { accountId },
-      {
-        attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 1000,
-        },
-        removeOnComplete: 50,
-        removeOnFail: 50,
-      },
-    );
-
-    return { jobId: job.id };
-  }
-
-  async handleSync(payload: SyncTrackingJobPayload) {
+  async handleSync(payload: BaseSyncJobPayload) {
     this.logger.log(`Starting tracking sync for account ${payload.accountId}`);
 
     const account = await this.accountsService.findOneOrFail(payload.accountId);
@@ -169,9 +115,5 @@ export class TrackingSyncService implements OnModuleDestroy {
     } finally {
       await browser.close();
     }
-  }
-
-  async onModuleDestroy() {
-    await this.worker.close();
   }
 }

@@ -1,6 +1,6 @@
-import { Inject, Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Queue, Worker } from 'bullmq';
+import { Queue } from 'bullmq';
 import { AccountsService } from '../accounts/accounts.service';
 import { SYNC_CONSOLIDATED_STATUS_QUEUE_NAME } from '../common/constants';
 import {
@@ -8,81 +8,30 @@ import {
   Shipment,
 } from '../shipments/shipment.entity';
 import { ShipmentsService } from '../shipments/shipments.service';
+import { AbstractSyncService } from './abstract-sync.service';
+import { BaseSyncJobPayload } from './interfaces/base-sync-job-payload.interface';
 
 export const SYNC_CONSOLIDATED_STATUS_QUEUE = 'SYNC_CONSOLIDATED_STATUS_QUEUE';
 
-interface SyncConsolidatedStatusJobPayload {
-  accountId: string;
+interface SyncConsolidatedStatusJobPayload extends BaseSyncJobPayload {
   forceAllAccounts?: boolean;
 }
 
 @Injectable()
-export class ConsolidatedStatusSyncService implements OnModuleDestroy {
-  private readonly logger = new Logger(ConsolidatedStatusSyncService.name);
-  private readonly queueName: string;
-  private readonly worker: Worker<SyncConsolidatedStatusJobPayload>;
-
+export class ConsolidatedStatusSyncService extends AbstractSyncService<SyncConsolidatedStatusJobPayload> {
   constructor(
     @Inject(SYNC_CONSOLIDATED_STATUS_QUEUE)
-    private readonly queue: Queue<SyncConsolidatedStatusJobPayload>,
-    private readonly configService: ConfigService,
+    queue: Queue<SyncConsolidatedStatusJobPayload>,
+    configService: ConfigService,
     private readonly accountsService: AccountsService,
     private readonly shipmentsService: ShipmentsService,
   ) {
-    this.queueName = this.configService.get<string>(
-      'queue.syncConsolidatedStatusQueueName',
-      SYNC_CONSOLIDATED_STATUS_QUEUE_NAME,
-    );
-
-    const redisConfig = this.configService.get<{
-      host: string;
-      port: number;
-      username?: string;
-      password?: string;
-    }>('queue.redis');
-
-    this.worker = new Worker(
-      this.queueName,
-      async (job) => this.handleSync(job.data),
-      {
-        concurrency: 2,
-        connection: {
-          host: redisConfig?.host,
-          port: redisConfig?.port,
-          username: redisConfig?.username,
-          password: redisConfig?.password,
-          maxRetriesPerRequest: null,
-        },
-      },
-    );
-
-    this.worker.on('completed', (job, result) => {
-      this.logger.log(
-        `Job ${job.id} completed with result: ${JSON.stringify(result)}`,
-      );
+    super(queue, configService, {
+      queueConfigKey: 'queue.syncConsolidatedStatusQueueName',
+      defaultQueueName: SYNC_CONSOLIDATED_STATUS_QUEUE_NAME,
+      jobName: 'sync-consolidated-status-job',
+      loggerContext: ConsolidatedStatusSyncService.name,
     });
-
-    this.worker.on('failed', (job, error) => {
-      this.logger.error(`Job ${job?.id} failed: ${error.message}`);
-    });
-  }
-
-  async enqueue(accountId: string, forceAllAccounts: boolean) {
-    const job = await this.queue.add(
-      'sync-consolidated-status-job',
-      { accountId, forceAllAccounts },
-      {
-        attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 1000,
-        },
-        removeOnComplete: 50,
-        removeOnFail: 50,
-      },
-    );
-
-    return { jobId: job.id };
   }
 
   async handleSync(payload: SyncConsolidatedStatusJobPayload) {
@@ -177,9 +126,5 @@ export class ConsolidatedStatusSyncService implements OnModuleDestroy {
     today.setHours(0, 0, 0, 0);
 
     return value.getTime() < today.getTime();
-  }
-
-  async onModuleDestroy() {
-    await this.worker.close();
   }
 }
