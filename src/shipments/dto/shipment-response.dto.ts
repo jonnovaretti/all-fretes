@@ -54,6 +54,9 @@ export class ShipmentResponseDto {
     | 'in transit'
     | null;
 
+  @ApiProperty({ example: false })
+  checked: boolean;
+
   @ApiProperty({ example: '2024-06-01T12:34:56.000Z' })
   createdAt: Date;
 

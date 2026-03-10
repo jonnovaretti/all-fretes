@@ -1,13 +1,17 @@
 import {
+  Body,
   Controller,
   Get,
+  HttpCode,
   Param,
   ParseUUIDPipe,
+  Patch,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -15,6 +19,7 @@ import {
 } from '@nestjs/swagger';
 import { ShipmentResponseDto } from './dto/shipment-response.dto';
 import { FindShipmentsQueryDto } from './dto/find-shipments-query.dto';
+import { UpdateCheckedDto } from './dto/update-checked.dto';
 import { ShipmentsService } from './shipments.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
@@ -34,5 +39,18 @@ export class ShipmentsController {
     @Query() query: FindShipmentsQueryDto,
   ): Promise<ShipmentResponseDto[]> {
     return this.shipmentsService.findByAccountId(id, query);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Update checked status of a shipment' })
+  @ApiParam({ name: 'shipmentId', format: 'uuid' })
+  @ApiNoContentResponse()
+  @HttpCode(204)
+  @Patch(':shipmentId/checked')
+  async updateChecked(
+    @Param('shipmentId', ParseUUIDPipe) shipmentId: string,
+    @Body() body: UpdateCheckedDto,
+  ): Promise<void> {
+    await this.shipmentsService.updateChecked(shipmentId, body.checked);
   }
 }

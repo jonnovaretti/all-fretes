@@ -269,6 +269,10 @@ export class ShipmentsService {
     await this.trackingRepository.save(trackingRows);
   }
 
+  async updateChecked(shipmentId: string, checked: boolean) {
+    await this.shipmentRepository.update({ id: shipmentId }, { checked });
+  }
+
   async updateConsolidatedStatus(
     shipmentId: string,
     consolidatedStatus: ConsolidatedShipmentStatus | null,

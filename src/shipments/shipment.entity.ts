@@ -70,6 +70,9 @@ export class Shipment {
   @Column({ name: 'consolidated_status', type: 'varchar', nullable: true })
   consolidatedStatus: ConsolidatedShipmentStatus | null;
 
+  @Column({ type: 'boolean', nullable: false, default: false })
+  checked: boolean;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
