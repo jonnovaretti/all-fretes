@@ -178,6 +178,12 @@ export class ShipmentsService {
       );
     }
 
+    if (query !== undefined) {
+      queryBuilder.andWhere('shipment.checked = :checked', {
+        checked: query.checked ?? false,
+      });
+    }
+
     const { entities, raw } = await queryBuilder.getRawAndEntities();
 
     return entities.map((shipment, index) => ({
